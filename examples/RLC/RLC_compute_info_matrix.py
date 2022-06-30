@@ -24,8 +24,11 @@ if __name__ == '__main__':
     no_cuda = True  # no GPU, CPU only training
     threads = 6  # max number of CPU threads
     n_fit = -1  # all points
-    lambda_reg = 0.1
+    tau_prior = 0.1  # precision (1/var) of the prior on theta
+    sigma_noise = 0.05  # noise variance (could be learnt instead)
 
+    var_noise = sigma_noise**2
+    beta_noise = 1/var_noise
 
     # CPU/GPU resources
     use_cuda = not no_cuda and torch.cuda.is_available()
@@ -33,12 +36,11 @@ if __name__ == '__main__':
     torch.set_num_threads(threads)
 
     # Load dataset
-    t, u, y, x = rlc_loader("train", "nl", noise_std=0.05, n_data=n_fit, output='I_L')  # state not used
+    t, u, y, x = rlc_loader("train", "nl", noise_std=sigma_noise, n_data=n_fit, output='I_L')  # state not used
 
     n_x = x.shape[-1]
     ts = t[1, 0] - t[0, 0]
     seq_len = t.shape[0]
-    noise_std = 0.05
 
     # Setup neural model structure
     f_xu = models.NeuralLinStateUpdate(n_x=2, n_u=1,
@@ -93,12 +95,15 @@ if __name__ == '__main__':
 
     #%%
 
-    F_prior = np.eye(n_param)*lambda_reg
-    F_theta = J.transpose() @ J / noise_std
-    P_theta = np.linalg.inv(F_theta)
+    # negative Hessian of the log-prior
+    H_prior = np.eye(n_param) * tau_prior
+    # information matrix (or approximate negative Hessian of the log-likelihood)
+    H_lik = J.transpose() @ J * beta_noise
+    H_theta = H_prior + H_lik
+    P_theta = np.linalg.inv(H_lik)
     P_y = J @ P_theta @ J.transpose()
 
-    W, V = np.linalg.eig(F_theta)
+    W, V = np.linalg.eig(H_lik)
     #plt.plot(W.real, W.imag, "*")
 
     #%%
@@ -119,5 +124,17 @@ if __name__ == '__main__':
     ax[1].set_xlabel("Time (mu_s)")
     ax[1].set_ylabel("Voltage (V)")
 
+    plt.show()
+
+    #%%
+    fig, ax = plt.subplots(1, 2)
+    ax[0].set_title("Covariance")
+    ax[0].matshow(P_theta)
+    ax[0].set_title("Covariance Inverse")
+    ax[1].matshow(H_theta)
+
+    U, S, V = np.linalg.svd(H_theta)
+    plt.figure()
+    plt.plot(S, "*")
     plt.show()
 
