@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # Truncated simulation error minimization method
 if __name__ == '__main__':
 
-    model_filename = "ss_model_ms.pt"
+    model_filename = "ss_model_ms_V.pt"
     model_data = torch.load(os.path.join("models", model_filename))
     hidden_sizes = model_data["hidden_sizes"]
     hidden_acts = model_data["hidden_acts"]
@@ -36,14 +36,14 @@ if __name__ == '__main__':
     torch.set_num_threads(threads)
 
     # Load dataset
-    t, u, y, x = rlc_loader("train", "nl", noise_std=sigma_noise, n_data=n_fit, output='I_L')  # state not used
+    t, u, y, x = rlc_loader("train", "lin", noise_std=sigma_noise, n_data=n_fit, output='V_C')  # state not used
 
     n_x = x.shape[-1]
     ts = t[1, 0] - t[0, 0]
     seq_len = t.shape[0]
 
     # Setup neural model structure
-    f_xu = models.NeuralLinStateUpdate(n_x=2, n_u=1,
+    f_xu = models.NeuralStateUpdate(n_x=2, n_u=1,
                                        hidden_sizes=hidden_sizes, hidden_acts=hidden_acts).to(device)
     g_x = models.ChannelsOutput(channels=[0]).to(device)  # output is channel 0
     model = StateSpaceSimulator(f_xu, g_x).to(device)
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     plt.plot(S, "*")
 
     plt.figure()
-    plt.imshow(H_post)
+    plt.imshow(np.abs(H_post))
     plt.colorbar()
     plt.show()
 

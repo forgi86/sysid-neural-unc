@@ -45,8 +45,9 @@ if __name__ == '__main__':
     t, u, y, _ = rlc_loader("train", "nl", noise_std=0.05, n_data=n_fit, output='V_C')  # state not used
 
     # Setup neural model structure
-    f_xu = models.NeuralStateUpdate(n_x=2, n_u=1,
-                                       hidden_sizes=hidden_sizes, hidden_acts=hidden_acts).to(device)
+    f_xu = models.NeuralLinStateUpdate(n_x=2, n_u=1,
+                                       hidden_sizes=hidden_sizes, hidden_acts=hidden_acts,
+                                       init_small=True).to(device)
     g_x = models.ChannelsOutput(channels=[0]).to(device)  # output is channel 0
     model = StateSpaceSimulator(f_xu, g_x).to(device)
     estimator = FeedForwardStateEstimator(n_u=1, n_y=1, n_x=2, seq_len=32, hidden_size=64).to(device)
@@ -66,15 +67,20 @@ if __name__ == '__main__':
     LOSS_FIT = []
     start_time = time.time()
 
-#    model.f_xu.disable_nl()
-#    model.f_xu.freeze_nl()
+    model.f_xu.disable_nl()
+    model.f_xu.freeze_nl()
     # Training loop
     for epoch in range(epochs):
 
-#        if epoch == 100:
-#            model.f_xu.enable_nl()
-#            model.f_xu.unfreeze_nl()
-#            model.f_xu.freeze_lin()
+        if epoch == 100:
+            model.f_xu.enable_nl()
+            model.f_xu.unfreeze_nl()
+            model.f_xu.freeze_lin()
+
+            optimizer.param_groups[0]['lr'] = 1e-4
+            optimizer.param_groups[0]['lr'] = 1e-4
+            optimizer.param_groups[1]['lr'] = 1e-4
+            optimizer.param_groups[1]['lr'] = 1e-4
 
         for batch_idx, (batch_u, batch_y) in enumerate(train_loader):
             optimizer.zero_grad()

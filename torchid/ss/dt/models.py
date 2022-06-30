@@ -48,18 +48,13 @@ class NeuralStateUpdate(nn.Module):
         >>> ss_model = NeuralStateUpdate(n_x=2, n_u=1, hidden_size=64)
     """
 
-    def __init__(self, n_x, n_u, hidden_size=16, init_small=True):
+    def __init__(self, n_x, n_u, hidden_sizes=[64, 32], hidden_acts=[nn.Tanh(), nn.Tanh()], init_small=True):
         super(NeuralStateUpdate, self).__init__()
         self.n_x = n_x
         self.n_u = n_u
-        self.n_feat = hidden_size
-        self.net = nn.Sequential(
-            nn.Linear(n_x + n_u, hidden_size),  # 2 states, 1 input
-            #nn.Tanh(),
-            #nn.Linear(hidden_size, hidden_size),
-            nn.Tanh(),
-            nn.Linear(hidden_size, n_x)
-        )
+        layers = list(zip(hidden_sizes, hidden_acts))
+        layers += [(n_x, nn.Identity())]
+        self.net = MLP(n_x+n_u, layers)
 
         if init_small:
             for m in self.net.modules():

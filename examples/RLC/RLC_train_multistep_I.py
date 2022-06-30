@@ -5,12 +5,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-import matplotlib
-matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import torchid.ss.dt.models as models
 from torchid.ss.dt.simulator import StateSpaceSimulator
-from torchid.ss.dt.estimators import LSTMStateEstimator, FeedForwardStateEstimator
+from torchid.ss.dt.estimators import FeedForwardStateEstimator
 from torchid.datasets import SubsequenceDataset
 from loader import rlc_loader
 
@@ -31,9 +29,15 @@ if __name__ == '__main__':
     seq_est_len = 32  # estimation sequence length
     batch_size = 256  # batch size q
     lr = 1e-3  # learning rate
-    n_fit = 5000
-    hidden_sizes = [64]
-    hidden_acts = [nn.Tanh()]
+    n_fit = -1  # all points
+
+    hidden_sizes = [16]
+    hidden_acts = [nn.ReLU()]
+
+
+    #hidden_sizes = [64, 32]
+    #hidden_acts = [nn.ReLU(), nn.ReLU()]
+    #hidden_acts = [nn.Tanh(), nn.Tanh()]
     n_x = 2
 
     # CPU/GPU resources
@@ -42,13 +46,14 @@ if __name__ == '__main__':
     torch.set_num_threads(threads)
 
     # Load dataset
-    t, u, y, _ = rlc_loader("train", "nl", noise_std=0.05, n_data=n_fit, output='V_C')  # state not used
+    t, u, y, _ = rlc_loader("train", "nl", noise_std=0.05, n_data=n_fit, output='I_L')  # state not used
 
     # Setup neural model structure
     f_xu = models.NeuralStateUpdate(n_x=2, n_u=1,
                                        hidden_sizes=hidden_sizes, hidden_acts=hidden_acts).to(device)
     g_x = models.ChannelsOutput(channels=[0]).to(device)  # output is channel 0
     model = StateSpaceSimulator(f_xu, g_x).to(device)
+    #estimator = LSTMStateEstimator(n_u=1, n_y=1, n_x=2).to(device)
     estimator = FeedForwardStateEstimator(n_u=1, n_y=1, n_x=2, seq_len=32, hidden_size=64).to(device)
 
     load_len = seq_sim_len + seq_est_len
@@ -66,15 +71,15 @@ if __name__ == '__main__':
     LOSS_FIT = []
     start_time = time.time()
 
-#    model.f_xu.disable_nl()
-#    model.f_xu.freeze_nl()
+    #model.f_xu.disable_nl()
+    #model.f_xu.freeze_nl()
     # Training loop
     for epoch in range(epochs):
 
-#        if epoch == 100:
-#            model.f_xu.enable_nl()
-#            model.f_xu.unfreeze_nl()
-#            model.f_xu.freeze_lin()
+    #    if epoch == 100:
+    #        model.f_xu.enable_nl()
+    #        model.f_xu.unfreeze_nl()
+    #        model.f_xu.freeze_lin()
 
         for batch_idx, (batch_u, batch_y) in enumerate(train_loader):
             optimizer.zero_grad()
@@ -115,7 +120,7 @@ if __name__ == '__main__':
 
     model = model.to("cpu")
     estimator = estimator.to("cpu")
-    model_filename = "ss_model_ms_V.pt"
+    model_filename = "ss_model_ms.pt"
     torch.save({
                 "n_x": n_x,
                 "hidden_sizes": hidden_sizes,
