@@ -54,13 +54,15 @@ if __name__ == '__main__':
     # Evaluate the model in open-loop simulation against validation data
 
     u = torch.from_numpy(u)
-    x_step = torch.zeros((n_x), dtype=torch.float32, requires_grad=True)
+    x_step = torch.zeros(n_x, dtype=torch.float32, requires_grad=True)
     s_step = torch.zeros(n_x, n_param)
+    P_step = torch.eye(n_param) * 1 / tau_prior  # prior parameter covariance
+    H_step = torch.zeros((n_param, n_param), dtype=torch.float32) #torch.eye(n_param) * tau_prior  # prior inverse parameter covariance
 
     x_sim = []
     J_rows = []
 
-    for time_idx in range(seq_len):
+    for time_idx in range(3):
         # print(time_idx)
 
         # Current input
@@ -69,7 +71,9 @@ if __name__ == '__main__':
         # Current state and current output sensitivity
         x_sim.append(x_step)
         phi_step = s_step[[0], :]  # Special case of (14b), output = first state
+
         J_rows.append(phi_step)
+        H_step = H_step + phi_step.t() @ phi_step * beta_noise
 
         # Current x
         # System update
@@ -88,6 +92,7 @@ if __name__ == '__main__':
         x_step = (x_step + delta_x).detach().requires_grad_(True)
 
         s_step = s_step + J_x @ s_step + J_theta  # Eq. 14a in the paper
+
 
     J = torch.cat(J_rows).squeeze(-1).numpy()
     x_sim = torch.stack(x_sim)
@@ -141,6 +146,12 @@ if __name__ == '__main__':
     plt.figure()
     plt.suptitle("Covariance Inverse")
     plt.imshow(H_post)
+    plt.colorbar()
+    plt.show()
+
+    plt.figure()
+    plt.suptitle("Covariance Inverse")
+    plt.imshow(H_post - H_step.numpy())
     plt.colorbar()
     plt.show()
 
