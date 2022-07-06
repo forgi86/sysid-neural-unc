@@ -22,15 +22,15 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     no_cuda = True  # no GPU, CPU only training
+    dtype = torch.float64
     threads = 6  # max number of CPU threads
     n_fit = -1  # all points
-    beta_prior = 10  # precision (1/var) of the prior on theta
+    beta_prior = 0.01  # precision (1/var) of the prior on theta
     sigma_noise = 0.05  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
     var_prior = 1/beta_prior
-
 
     # CPU/GPU resources
     use_cuda = not no_cuda and torch.cuda.is_available()
@@ -51,22 +51,30 @@ if __name__ == '__main__':
     model = StateSpaceSimulator(f_xu, g_x).to(device)
 
     model.load_state_dict(model_data["model"])
+    model = model.to(dtype).to(device)
 
     n_param = sum(map(torch.numel, f_xu.parameters()))
     # Evaluate the model in open-loop simulation against validation data
 
-    u = torch.from_numpy(u)
-    x_step = torch.zeros(n_x, dtype=torch.float32, requires_grad=True)
-    s_step = torch.zeros(n_x, n_param)
+    #seq_len = 10000
 
-    P_step = torch.eye(n_param) * var_prior  # prior parameter covariance
-    H_step = torch.zeros((n_param, n_param), dtype=torch.float32)
-    #H_step = torch.eye(n_param) * tau_prior/seq_len  # prior inverse parameter covariance
+    u = torch.from_numpy(u)
+    x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
+    s_step = torch.zeros(n_x, n_param, dtype=dtype)
+
+    scaling_H = 1/(seq_len * beta_noise)
+    scaling_P = 1/scaling_H
+    scaling_phi = np.sqrt(beta_noise * scaling_H)
+
+    # negative Hessian of the log-prior
+    H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
+    P_step = torch.eye(n_param, dtype=dtype) / beta_prior/scaling_H  # prior parameter covariance
+    H_step = torch.zeros((n_param, n_param), dtype=dtype)
+    #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance
 
     x_sim = []
     J_rows = []
 
-    #seq_len = 1000
     for time_idx in range(seq_len):
         # print(time_idx)
 
@@ -75,13 +83,13 @@ if __name__ == '__main__':
 
         # Current state and current output sensitivity
         x_sim.append(x_step)
-        phi_step = s_step[[0], :]  # Special case of (14b), output = first state
+        phi_step = s_step[[0], :].t() * scaling_phi  # Special case of (14b), output = first state
 
-        J_rows.append(phi_step / np.sqrt(seq_len))
-        H_step = H_step + phi_step.t() @ phi_step/seq_len
+        J_rows.append(phi_step.t())
+        H_step = H_step + phi_step @ phi_step.t()
 
-        den = 1 + phi_step @ P_step @ phi_step.t() * beta_noise
-        P_tmp = -beta_noise * P_step @ phi_step.t() @ phi_step @ P_step/den
+        den = 1 + phi_step.t() @ P_step @ phi_step
+        P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
         P_step = P_step + P_tmp
 
         # Current x
@@ -102,75 +110,74 @@ if __name__ == '__main__':
 
         s_step = s_step + J_x @ s_step + J_theta  # Eq. 14a in the paper
 
-    J = torch.cat(J_rows).squeeze(-1).numpy()
-    P_step = P_step.numpy()
-    H_step = H_step.numpy() * seq_len * beta_noise
+    J = torch.cat(J_rows).squeeze(-1)
     x_sim = torch.stack(x_sim)
     y_sim = x_sim[:, [0]].detach().numpy()
 
-    #%%
-
-    # negative Hessian of the log-prior
-    H_prior = np.eye(n_param) * beta_prior
     # information matrix (or approximate negative Hessian of the log-likelihood)
-    H_lik = J.transpose() @ J * beta_noise * seq_len
+    H_lik = J.t() @ J
     H_post = H_prior + H_step
-    P_post = np.linalg.inv(H_post)
-    P_y = J @ P_step @ J.transpose()
 
+    #P_step = P_step.numpy()
+    #H_step = H_step.numpy()
+
+
+    #%%
+    P_post = torch.linalg.inv(H_post) * scaling_P
+    P_y = J @ P_step @ J.t()
     W, V = np.linalg.eig(H_lik)
     #plt.plot(W.real, W.imag, "*")
 
     #%%
-    # fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
-    #
-    # ax[0].plot(t, y, 'k',  label='$v_C$')
-    # ax[0].plot(t, y_sim, 'b',  label='$\hat v_C$')
-    # ax[0].plot(t, y-y_sim, 'r',  label='e')
-    # ax[0].plot(t, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
-    # ax[0].plot(t, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
-    # ax[0].legend(loc='upper right')
-    # ax[0].grid(True)
-    # ax[0].set_xlabel(r"Time ($\mu_s$)")
-    # ax[0].set_ylabel("Current (A)")
-    #
-    # ax[1].plot(t, u, 'k',  label='$v_{in}$')
-    # ax[1].legend(loc='upper right')
-    # ax[1].grid(True)
-    # ax[1].set_xlabel(r"Time ($\mu_s$)")
-    # ax[1].set_ylabel("Voltage (V)")
-    #
+    fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
+
+    ax[0].plot(t, y, 'k',  label='$v_C$')
+    ax[0].plot(t, y_sim, 'b',  label='$\hat v_C$')
+    ax[0].plot(t, y-y_sim, 'r',  label='e')
+    ax[0].plot(t, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
+    ax[0].plot(t, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
+    ax[0].legend(loc='upper right')
+    ax[0].grid(True)
+    ax[0].set_xlabel(r"Time ($\mu_s$)")
+    ax[0].set_ylabel("Current (A)")
+
+    ax[1].plot(t, u, 'k',  label='$v_{in}$')
+    ax[1].legend(loc='upper right')
+    ax[1].grid(True)
+    ax[1].set_xlabel(r"Time ($\mu_s$)")
+    ax[1].set_ylabel("Voltage (V)")
+
 
     #%%
-    # fig, ax = plt.subplots(1, 2)
-    # ax[0].set_title("Covariance")
-    # ax[0].matshow(P_post)
-    # ax[1].set_title("Covariance Inverse")
-    # ax[1].matshow(H_post)
-    #
-    # U, S, V = np.linalg.svd(H_post)
-    # plt.figure()
-    # plt.plot(S, "*")
-    #
-    # plt.figure()
-    # plt.suptitle("Covariance Inverse")
-    # plt.imshow(H_post)
-    # plt.colorbar()
-    # plt.show()
-    #
-    # plt.figure()
-    # plt.suptitle("Covariance Inverse Err")
-    # plt.imshow(H_post - H_step)
-    # plt.colorbar()
-    # plt.show()    # fig, ax = plt.subplots(1, 2)
-    # ax[0].set_title("Covariance")
-    # ax[0].matshow(P_post)
-    # ax[1].set_title("Covariance Inverse")
-    # ax[1].matshow(H_post)
-    #
-    # U, S, V = np.linalg.svd(H_post)
-    # plt.figure()
-    # plt.plot(S, "*")
+    fig, ax = plt.subplots(1, 2)
+    ax[0].set_title("Covariance")
+    ax[0].matshow(P_post)
+    ax[1].set_title("Covariance Inverse")
+    ax[1].matshow(H_post)
+
+    U, S, V = np.linalg.svd(H_post)
+    plt.figure()
+    plt.plot(S, "*")
+
+    plt.figure()
+    plt.suptitle("Covariance Inverse")
+    plt.imshow(H_post)
+    plt.colorbar()
+    plt.show()
+
+    plt.figure()
+    plt.suptitle("Covariance Inverse Err")
+    plt.imshow(H_post - H_step)
+    plt.colorbar()
+    plt.show()    # fig, ax = plt.subplots(1, 2)
+    ax[0].set_title("Covariance")
+    ax[0].matshow(P_post)
+    ax[1].set_title("Covariance Inverse")
+    ax[1].matshow(H_post)
+
+    U, S, V = np.linalg.svd(H_post)
+    plt.figure()
+    plt.plot(S, "*")
 
     plt.figure()
     plt.suptitle("Covariance Inverse")

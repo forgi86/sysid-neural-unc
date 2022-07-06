@@ -32,7 +32,7 @@ if __name__ == '__main__':
     batch_size = 256  # batch size q
     lr = 1e-3  # learning rate
     n_fit = 5000
-    hidden_sizes = [64]
+    hidden_sizes = [16]
     hidden_acts = [nn.Tanh()]
     n_x = 2
 
