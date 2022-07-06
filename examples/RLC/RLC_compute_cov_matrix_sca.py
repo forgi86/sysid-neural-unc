@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # Truncated simulation error minimization method
 if __name__ == '__main__':
 
-    model_filename = "ss_model_ms.pt"
+    model_filename = "ss_model_ms_V.pt"
     model_data = torch.load(os.path.join("models", model_filename))
     hidden_sizes = model_data["hidden_sizes"]
     hidden_acts = model_data["hidden_acts"]
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     torch.set_num_threads(threads)
 
     # Load dataset
-    t, u, y, x = rlc_loader("train", "nl", noise_std=sigma_noise, n_data=n_fit, output='I_L')  # state not used
+    t, u, y, x = rlc_loader("train", "nl", noise_std=sigma_noise, n_data=n_fit, output='V_C')  # state not used
 
     n_x = x.shape[-1]
     ts = t[1, 0] - t[0, 0]
@@ -150,26 +150,6 @@ if __name__ == '__main__':
 
     #%%
     fig, ax = plt.subplots(1, 2)
-    ax[0].set_title("Covariance")
-    ax[0].matshow(P_post)
-    ax[1].set_title("Covariance Inverse")
-    ax[1].matshow(H_post)
-
-    U, S, V = np.linalg.svd(H_post)
-    plt.figure()
-    plt.plot(S, "*")
-
-    plt.figure()
-    plt.suptitle("Covariance Inverse")
-    plt.imshow(H_post)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance Inverse Err")
-    plt.imshow(H_post - H_step)
-    plt.colorbar()
-    plt.show()    # fig, ax = plt.subplots(1, 2)
     ax[0].set_title("Covariance")
     ax[0].matshow(P_post)
     ax[1].set_title("Covariance Inverse")
