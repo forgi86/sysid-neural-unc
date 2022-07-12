@@ -4,6 +4,8 @@ import numpy as np
 import torch
 import torch.optim as optim
 import time
+import matplotlib
+matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from torchid.ss.dt.models import CTSNeuralStateSpace

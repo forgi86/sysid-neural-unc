@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
 import torch
+import matplotlib
+matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import os
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from torchid.ss.dt.models import CTSNeuralStateSpace
-from examples.util import metrics
+import torchid.metrics as metrics
 
 if __name__ == '__main__':
 
@@ -84,7 +86,7 @@ if __name__ == '__main__':
 
     # R-squared metrics
     R_sq = metrics.r_squared(y_sim_val, y_meas_val)
-    rmse_sim = metrics.error_rmse(y_sim_val, y_meas_val)
+    rmse_sim = metrics.rmse(y_sim_val, y_meas_val)
 
     print(f"R-squared metrics: {R_sq}")
     print(f"RMSE-squared metrics: {rmse_sim}")
