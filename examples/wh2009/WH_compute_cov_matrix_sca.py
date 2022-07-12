@@ -80,6 +80,7 @@ if __name__ == '__main__':
     #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance
 
     x_sim = []
+    y_sim = []
     J_rows = []
 
     for time_idx in range(N):
@@ -90,14 +91,28 @@ if __name__ == '__main__':
 
         # Current state and current output sensitivity
         x_sim.append(x_step)
-        phi_step = s_step[[0], :].t() * scaling_phi  # Special case of (14b), output = first state
+        y_step = g_x(x_step)
+        y_sim.append(y_step)
+
+        # Jacobian of y wrt x
+        basis_y = torch.eye(n_y).unbind()
+        jacs_gx = [torch.autograd.grad(y_step, x_step, v, retain_graph=True)[0] for v in basis_y]
+        J_gx = torch.stack(jacs_gx, dim=0)
+
+        # Jacobian of y wrt theta
+        jacs_gtheta = [torch.autograd.grad(y_step, g_x.parameters(), v, retain_graph=True) for v in basis_y]
+        jacs_gtheta_f = [torch.cat([jac.ravel() for jac in jacs_gtheta[j]]) for j in range(n_y)]  # ravel jacobian rows
+        J_gtheta = torch.stack(jacs_gtheta_f)  # stack jacobian rows to obtain a jacobian matrix
+        phi_step_1 = J_gx @ s_step
+        phi_step_2 = J_gtheta
+        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1)
 
         J_rows.append(phi_step.t())
         H_step = H_step + phi_step @ phi_step.t()
 
-        den = 1 + phi_step.t() @ P_step @ phi_step
-        P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
-        P_step = P_step + P_tmp
+        #den = 1 + phi_step.t() @ P_step @ phi_step
+        #P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
+        #P_step = P_step + P_tmp
 
         # Current x
         # System update
@@ -105,21 +120,21 @@ if __name__ == '__main__':
         basis_x = torch.eye(n_x).unbind()
 
         # Jacobian of delta_x wrt x
-        jacs_x = [torch.autograd.grad(delta_x, x_step, v, retain_graph=True)[0] for v in basis_x]
-        J_x = torch.stack(jacs_x, dim=0)
+        jacs_fx = [torch.autograd.grad(delta_x, x_step, v, retain_graph=True)[0] for v in basis_x]
+        J_fx = torch.stack(jacs_fx, dim=0)
 
         # Jacobian of delta_x wrt theta
-        jacs_theta = [torch.autograd.grad(delta_x, f_xu.parameters(), v, retain_graph=True) for v in basis_x]
-        jacs_theta_f = [torch.cat([jac.ravel() for jac in jacs_theta[j]]) for j in range(n_x)]  # ravel jacobian rows
-        J_theta = torch.stack(jacs_theta_f)  # stack jacobian rows to obtain a jacobian matrix
+        jacs_ftheta = [torch.autograd.grad(delta_x, f_xu.parameters(), v, retain_graph=True) for v in basis_x]
+        jacs_ftheta_f = [torch.cat([jac.ravel() for jac in jacs_ftheta[j]]) for j in range(n_x)]  # ravel jacobian rows
+        J_ftheta = torch.stack(jacs_ftheta_f)  # stack jacobian rows to obtain a jacobian matrix
 
         x_step = (x_step + delta_x).detach().requires_grad_(True)
 
-        s_step = s_step + J_x @ s_step + J_theta  # Eq. 14a in the paper
+        s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14a in the paper
 
     J = torch.cat(J_rows).squeeze(-1)
     x_sim = torch.stack(x_sim)
-    y_sim = x_sim[:, [0]].detach().numpy()
+    y_sim = torch.stack(y_sim)
 
     # information matrix (or approximate negative Hessian of the log-likelihood)
     H_lik = J.t() @ J
@@ -136,19 +151,22 @@ if __name__ == '__main__':
     #plt.plot(W.real, W.imag, "*")
 
     #%%
+    y_sim = y_sim.detach().numpy()
+
+    #%%
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_fit, y_fit, 'k',  label='$v_C$')
     ax[0].plot(t_fit, y_sim, 'b',  label='$\hat v_C$')
     ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
-    ax[0].plot(t_fit, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
-    ax[0].plot(t_fit, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
+    #ax[0].plot(t_fit, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
+    #ax[0].plot(t_fit, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
     ax[0].set_xlabel(r"Time ($\mu_s$)")
     ax[0].set_ylabel("Current (A)")
 
-    ax[1].plot(t, u, 'k',  label='$v_{in}$')
+    ax[1].plot(t_fit, u, 'k',  label='$v_{in}$')
     ax[1].legend(loc='upper right')
     ax[1].grid(True)
     ax[1].set_xlabel(r"Time ($\mu_s$)")

@@ -68,7 +68,7 @@ if __name__ == '__main__':
     optimizer_LBFGS = torch.optim.LBFGS(
         list(model.parameters())+list(estimator.parameters()),
         line_search_fn="strong_wolfe",
-        lr=1.0
+        lr=0.1
     )
 
     # %% Other initializations
