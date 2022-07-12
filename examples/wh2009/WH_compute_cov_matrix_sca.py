@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 # Truncated simulation error minimization method
 if __name__ == '__main__':
 
-    model_filename = "ss_model_ms_V.pt"
+    model_filename = "model.pt"
     model_data = torch.load(os.path.join("models", model_filename))
-    hidden_sizes = model_data["hidden_sizes"]
-    hidden_acts = model_data["hidden_acts"]
+    #hidden_sizes = model_data["hidden_sizes"]
+    #hidden_acts = model_data["hidden_acts"]
 
     # Set seed for reproducibility
     np.random.seed(0)
@@ -26,6 +26,7 @@ if __name__ == '__main__':
     n_x = 6
     n_u = 1
     n_y = 1
+    seq_est_len = 40
     est_hidden_size = 16
     hidden_size = 16
     n_fit = 10000
@@ -33,7 +34,6 @@ if __name__ == '__main__':
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
     threads = 6  # max number of CPU threads
-    n_fit = -1  # all points
     beta_prior = 0.01  # precision (1/var) of the prior on theta
     sigma_noise = 0.05  # noise variance (could be learnt instead)
 
@@ -51,6 +51,7 @@ if __name__ == '__main__':
     t_train, u_train, y_train = wh2009_loader("train", scale=True)
     t_fit, u_fit, y_fit = t_train[:n_fit], u_train[:n_fit], y_train[:n_fit]
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
+    N = t_fit.shape[0]
 
     # Setup neural model structure
     f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_sizes=[hidden_size], hidden_acts=[nn.Tanh()]).to(device)
@@ -63,13 +64,12 @@ if __name__ == '__main__':
     n_param = sum(map(torch.numel, f_xu.parameters()))
     # Evaluate the model in open-loop simulation against validation data
 
-    #seq_len = 10000
 
-    u = torch.from_numpy(u)
+    u = torch.from_numpy(u_fit)
     x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
     s_step = torch.zeros(n_x, n_param, dtype=dtype)
 
-    scaling_H = 1/(seq_len * beta_noise)
+    scaling_H = 1/(N * beta_noise)
     scaling_P = 1/scaling_H
     scaling_phi = np.sqrt(beta_noise * scaling_H)
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     x_sim = []
     J_rows = []
 
-    for time_idx in range(seq_len):
+    for time_idx in range(N):
         # print(time_idx)
 
         # Current input
@@ -138,11 +138,11 @@ if __name__ == '__main__':
     #%%
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
 
-    ax[0].plot(t, y, 'k',  label='$v_C$')
-    ax[0].plot(t, y_sim, 'b',  label='$\hat v_C$')
-    ax[0].plot(t, y-y_sim, 'r',  label='e')
-    ax[0].plot(t, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
-    ax[0].plot(t, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
+    ax[0].plot(t_fit, y_fit, 'k',  label='$v_C$')
+    ax[0].plot(t_fit, y_sim, 'b',  label='$\hat v_C$')
+    ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
+    ax[0].plot(t_fit, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
+    ax[0].plot(t_fit, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
     ax[0].set_xlabel(r"Time ($\mu_s$)")

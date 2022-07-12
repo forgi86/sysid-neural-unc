@@ -38,15 +38,15 @@ if __name__ == '__main__':
 
     # Derived parameters
     if "est_frac" in args and args.est_frac is not None:
-        seq_est_len = int(args.seq_len * args.est_frac)
+        seq_est_len = int(args.seq_fit_len * args.est_frac)
 
     if "seq_est_len" in args and args.seq_est_len is not None:
         seq_est_len = args.seq_est_len
     backward_est = True if args.est_direction == "backward" else False
     if backward_est:
-        load_len = max(args.seq_len, seq_est_len)
+        load_len = max(args.seq_fit_len, seq_est_len)
     else:
-        load_len = args.seq_len + seq_est_len
+        load_len = args.seq_fit_len + seq_est_len
 
     # Load dataset
     t, u, y = wh2009_loader("train", scale=True)
