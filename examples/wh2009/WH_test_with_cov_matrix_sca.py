@@ -15,8 +15,16 @@ if __name__ == '__main__':
 
     model_filename = "model.pt"
     model_data = torch.load(os.path.join("models", model_filename))
-    #hidden_sizes = model_data["hidden_sizes"]
-    #hidden_acts = model_data["hidden_acts"]
+
+    cov_filename = "covariance.pt"
+    cov_data = torch.load(os.path.join("models", cov_filename))
+
+    P_post = cov_data["P_post"]
+    H_post = cov_data["H_post"]
+    scaling_H = cov_data["scaling_H"]
+    scaling_P = cov_data["scaling_P"]
+    scaling_phi = cov_data["scaling_phi"]
+
 
     # Set seed for reproducibility
     np.random.seed(0)
@@ -49,7 +57,7 @@ if __name__ == '__main__':
     # Load dataset
     # %% Load dataset
     t_train, u_train, y_train = wh2009_loader("train", scale=True)
-    t_fit, u_fit, y_fit = t_train[:n_fit], u_train[:n_fit], y_train[:n_fit]
+    t_fit, u_fit, y_fit = t_train[:n_fit], 1.6*u_train[:n_fit], 1.6*y_train[:n_fit]
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
     N = t_fit.shape[0]
 
@@ -70,17 +78,6 @@ if __name__ == '__main__':
     u = torch.from_numpy(u_fit)
     x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
     s_step = torch.zeros(n_x, n_fparam, dtype=dtype)
-
-    scaling_H = 1/(N * beta_noise)
-    scaling_P = 1/scaling_H
-    scaling_phi = np.sqrt(beta_noise * scaling_H)
-
-    # negative Hessian of the log-prior
-    H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
-    P_prior = torch.eye(n_param, dtype=dtype) / beta_prior * scaling_P
-    P_step = P_prior  # prior parameter covariance
-    H_step = torch.zeros((n_param, n_param), dtype=dtype)
-    #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance
 
     x_sim = []
     y_sim = []
@@ -113,11 +110,6 @@ if __name__ == '__main__':
         phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t() * scaling_phi
 
         J_rows.append(phi_step.t())
-        H_step = H_step + phi_step @ phi_step.t()
-
-        den = 1 + phi_step.t() @ P_step @ phi_step
-        P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
-        P_step = P_step + P_tmp
 
         # Current x
         # System update
@@ -140,20 +132,6 @@ if __name__ == '__main__':
     J = torch.cat(J_rows).squeeze(-1)
     x_sim = torch.stack(x_sim)
     y_sim = torch.stack(y_sim)
-
-    # information matrix (or approximate negative Hessian of the log-likelihood)
-    H_post = H_prior + H_step
-    P_post = torch.linalg.pinv(H_post)
-    #P_step = P_step.numpy()
-    #H_step = H_step.numpy()
-
-    torch.save({
-        "H_post": H_post,
-        "P_post": P_post,
-        "scaling_P": scaling_P,
-        "scaling_H": scaling_H,
-        "scaling_phi": scaling_phi
-    }, os.path.join("models", "covariance.pt"))
 
     #%%
     P_y = J @ (P_post/scaling_P) @ J.t()/(scaling_phi**2)
@@ -182,49 +160,4 @@ if __name__ == '__main__':
     ax[1].grid(True)
     ax[1].set_xlabel(r"Time ($\mu_s$)")
     ax[1].set_ylabel("Voltage (V)")
-
-
-    #%%
-    fig, ax = plt.subplots(1, 2)
-    ax[0].set_title("Covariance")
-    ax[0].matshow(P_post)
-    ax[1].set_title("Covariance Inverse")
-    ax[1].matshow(H_post)
-
-    U, S, VH = np.linalg.svd(H_post, hermitian=True)
-    V = VH.transpose()
-    # Vk = V[:10, :] an identifiable linear combination of parameters
-
-    E, Q = np.linalg.eig(H_post)  # equivalent (up to sign permulations)
-    E = np.real(E)
-    Q = np.real(Q)
-    plt.figure()
-    plt.plot(E, "*")
-
-    #%%
-    plt.figure()
-    plt.suptitle("Covariance Inverse")
-    plt.imshow(H_step)
-    plt.colorbar()
-    plt.show()
-
-    #%%
-
-    plt.figure()
-    plt.suptitle("Covariance")
-    plt.imshow(P_post)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance Recursive")
-    plt.imshow(P_step)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance error")
-    plt.imshow(P_post - P_step)
-    plt.colorbar()
-    plt.show()
 
