@@ -23,7 +23,7 @@ if __name__ == '__main__':
     H_post = cov_data["H_post"]
     scaling_H = cov_data["scaling_H"]
     scaling_P = cov_data["scaling_P"]
-    scaling_phi = cov_data["scaling_phi"]
+    #scaling_phi = cov_data["scaling_phi"]
 
 
     # Set seed for reproducibility
@@ -57,9 +57,9 @@ if __name__ == '__main__':
     # Load dataset
     # %% Load dataset
     t_train, u_train, y_train = wh2009_loader("train", scale=True)
-    t_fit, u_fit, y_fit = t_train[:n_fit], 1.6*u_train[:n_fit], 1.6*y_train[:n_fit]
+    t_test, u_test, y_test = t_train[:n_fit], u_train[:n_fit], y_train[:n_fit]
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
-    N = t_fit.shape[0]
+    N = t_test.shape[0]
 
     # Setup neural model structure
     f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_sizes=[hidden_size], hidden_acts=[nn.Tanh()]).to(device)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # Evaluate the model in open-loop simulation against validation data
 
-    u = torch.from_numpy(u_fit)
+    u = torch.from_numpy(u_test)
     x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
     s_step = torch.zeros(n_x, n_fparam, dtype=dtype)
 
@@ -83,6 +83,7 @@ if __name__ == '__main__':
     y_sim = []
     J_rows = []
 
+    scaling_phi = np.sqrt(N)
     for time_idx in range(N):
         # print(time_idx)
 
@@ -144,18 +145,18 @@ if __name__ == '__main__':
     #%%
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
 
-    ax[0].plot(t_fit, y_fit, 'k',  label='$v_C$')
-    ax[0].plot(t_fit, y_sim, 'b',  label='$\hat v_C$')
-    ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
+    ax[0].plot(t_test, y_test, 'k', label='$v_C$')
+    ax[0].plot(t_test, y_sim, 'b', label='$\hat v_C$')
+    ax[0].plot(t_test, y_test - y_sim, 'r', label='e')
     unc_std = np.sqrt(np.diag(P_y)).reshape(-1, 1)
-    ax[0].plot(t_fit, 6*unc_std, 'g',  label='$6\sigma$')
-    ax[0].plot(t_fit, -6*unc_std, 'g',  label='$-6\sigma$')
+    ax[0].plot(t_test, 6 * unc_std, 'g', label='$6\sigma$')
+    ax[0].plot(t_test, -6 * unc_std, 'g', label='$-6\sigma$')
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
     ax[0].set_xlabel(r"Time ($\mu_s$)")
     ax[0].set_ylabel("Current (A)")
 
-    ax[1].plot(t_fit, u, 'k',  label='$v_{in}$')
+    ax[1].plot(t_test, u, 'k', label='$v_{in}$')
     ax[1].legend(loc='upper right')
     ax[1].grid(True)
     ax[1].set_xlabel(r"Time ($\mu_s$)")

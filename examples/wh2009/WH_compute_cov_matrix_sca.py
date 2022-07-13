@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     scaling_H = 1/(N * beta_noise)
     scaling_P = 1/scaling_H
-    scaling_phi = np.sqrt(beta_noise * scaling_H)
+    scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(N)
 
     # negative Hessian of the log-prior
     H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
