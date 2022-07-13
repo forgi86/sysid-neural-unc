@@ -77,7 +77,8 @@ if __name__ == '__main__':
 
     # negative Hessian of the log-prior
     H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
-    P_step = torch.eye(n_param, dtype=dtype) / beta_prior/scaling_H  # prior parameter covariance
+    P_prior = torch.eye(n_param, dtype=dtype) / beta_prior * scaling_P
+    P_step = P_prior  # prior parameter covariance
     H_step = torch.zeros((n_param, n_param), dtype=dtype)
     #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance
 
@@ -141,17 +142,15 @@ if __name__ == '__main__':
     y_sim = torch.stack(y_sim)
 
     # information matrix (or approximate negative Hessian of the log-likelihood)
-    H_lik = J.t() @ J
     H_post = H_prior + H_step
-
+    P_post = torch.linalg.pinv(H_post)
     #P_step = P_step.numpy()
     #H_step = H_step.numpy()
 
 
     #%%
-    P_post = torch.linalg.inv(H_post) * scaling_P
-    P_y = J @ P_step @ J.t()
-    W, V = np.linalg.eig(H_lik)
+    P_y = J @ P_post/scaling_P @ J.t()/(scaling_phi**2)
+    W, V = np.linalg.eig(H_post)
     #plt.plot(W.real, W.imag, "*")
 
     #%%
@@ -163,8 +162,9 @@ if __name__ == '__main__':
     ax[0].plot(t_fit, y_fit, 'k',  label='$v_C$')
     ax[0].plot(t_fit, y_sim, 'b',  label='$\hat v_C$')
     ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
-    #ax[0].plot(t_fit, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
-    #ax[0].plot(t_fit, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
+    unc_std = np.sqrt(np.diag(P_y)).reshape(-1, 1)
+    ax[0].plot(t_fit, 6*unc_std, 'g',  label='$6\sigma$')
+    ax[0].plot(t_fit, -6*unc_std, 'g',  label='$-6\sigma$')
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
     ax[0].set_xlabel(r"Time ($\mu_s$)")
@@ -188,23 +188,14 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(S, "*")
 
+    #%%
     plt.figure()
     plt.suptitle("Covariance Inverse")
-    plt.imshow(H_lik)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance Inverse Recursive")
     plt.imshow(H_step)
     plt.colorbar()
     plt.show()
 
-    plt.figure()
-    plt.suptitle("Covariance Inverse Error")
-    plt.imshow(H_lik - H_step)
-    plt.colorbar()
-    plt.show()
+    #%%
 
     plt.figure()
     plt.suptitle("Covariance")

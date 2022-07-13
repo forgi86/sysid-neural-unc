@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     #%%
     P_post = torch.linalg.inv(H_post) * scaling_P
-    P_y = J @ P_step @ J.t()
+    P_y = J @ P_step/scaling_P @ J.t()
     W, V = np.linalg.eig(H_lik)
     #plt.plot(W.real, W.imag, "*")
 
