@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn as nn
 import torchid.ss.dt.models as models
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from torchid.ss.dt.estimators import LSTMStateEstimator
@@ -13,22 +14,22 @@ if __name__ == '__main__':
 
     matplotlib.rc('font', **{'size': 14, 'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
-    model_data = torch.load(os.path.join("models", "doe5", "model_113.pt"), map_location=torch.device('cpu'))  # best
+    model_data = torch.load(os.path.join("models", "model.pt"), map_location=torch.device('cpu'))  # best
 
-    n_x = model_data["n_x"]
-    n_y = model_data["n_y"]
-    n_u = model_data["n_u"]
-    args = model_data["args"]
+    n_x = 6
+    n_y = 1
+    n_u = 1
+    hidden_size = 16
 
     # Load dataset
     t, u, y = wh2009_loader("test", scale=True)
     y_mean, y_std = wh2009_scaling()
 
     #%% Load models and parameters
-    f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_size=args.hidden_size)
-    g_x = models.NeuralLinOutput(n_x, n_u, hidden_size=args.hidden_size)  #LinearOutput(n_x, n_y)
+    f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_sizes=[hidden_size], hidden_acts=[nn.Tanh()])
+    g_x = models.NeuralLinOutput(n_x, n_u, hidden_size=hidden_size)  #LinearOutput(n_x, n_y)
     model = StateSpaceSimulator(f_xu, g_x)
-    estimator = LSTMStateEstimator(n_u=n_u, n_y=n_y, n_x=n_x, flipped=True)
+    # estimator = LSTMStateEstimator(n_u=n_u, n_y=n_y, n_x=n_x, flipped=True)
     model.load_state_dict(model_data["model"])
     #state_estimator.load_state_dict(model_data["estimator"])
 
@@ -59,9 +60,9 @@ if __name__ == '__main__':
     plt.savefig("wh_best_timetrace.pdf")
 
     #%%
-    plt.figure()
-    plt.plot(model_data["TRAIN_LOSS"], 'b')
-    plt.plot(model_data["VAL_LOSS"], 'r')
+    #plt.figure()
+    #plt.plot(model_data["TRAIN_LOSS"], 'b')
+    #plt.plot(model_data["VAL_LOSS"], 'r')
 
     #%% Metrics
 

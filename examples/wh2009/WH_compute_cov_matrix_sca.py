@@ -35,7 +35,7 @@ if __name__ == '__main__':
     dtype = torch.float64
     threads = 6  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
-    sigma_noise = 0.05  # noise variance (could be learnt instead)
+    sigma_noise = 0.02  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
@@ -61,13 +61,15 @@ if __name__ == '__main__':
     model.load_state_dict(model_data["model"])
     model = model.to(dtype).to(device)
 
-    n_param = sum(map(torch.numel, f_xu.parameters()))
-    # Evaluate the model in open-loop simulation against validation data
+    n_param = sum(map(torch.numel, model.parameters()))
+    n_fparam = sum(map(torch.numel, f_xu.parameters()))
+    n_gparam = sum(map(torch.numel, g_x.parameters()))
 
+    # Evaluate the model in open-loop simulation against validation data
 
     u = torch.from_numpy(u_fit)
     x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
-    s_step = torch.zeros(n_x, n_param, dtype=dtype)
+    s_step = torch.zeros(n_x, n_fparam, dtype=dtype)
 
     scaling_H = 1/(N * beta_noise)
     scaling_P = 1/scaling_H
@@ -103,16 +105,18 @@ if __name__ == '__main__':
         jacs_gtheta = [torch.autograd.grad(y_step, g_x.parameters(), v, retain_graph=True) for v in basis_y]
         jacs_gtheta_f = [torch.cat([jac.ravel() for jac in jacs_gtheta[j]]) for j in range(n_y)]  # ravel jacobian rows
         J_gtheta = torch.stack(jacs_gtheta_f)  # stack jacobian rows to obtain a jacobian matrix
+
+        # Eq. 14a in the paper (special case, f and g independently parameterized)
         phi_step_1 = J_gx @ s_step
         phi_step_2 = J_gtheta
-        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1)
+        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t() * scaling_phi
 
         J_rows.append(phi_step.t())
         H_step = H_step + phi_step @ phi_step.t()
 
-        #den = 1 + phi_step.t() @ P_step @ phi_step
-        #P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
-        #P_step = P_step + P_tmp
+        den = 1 + phi_step.t() @ P_step @ phi_step
+        P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
+        P_step = P_step + P_tmp
 
         # Current x
         # System update
