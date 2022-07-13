@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
 
     #%%
-    P_y = J @ P_post/scaling_P @ J.t()/(scaling_phi**2)
+    P_y = J @ (P_post/scaling_P) @ J.t()/(scaling_phi**2)
     W, V = np.linalg.eig(H_post)
     #plt.plot(W.real, W.imag, "*")
 
@@ -184,9 +184,15 @@ if __name__ == '__main__':
     ax[1].set_title("Covariance Inverse")
     ax[1].matshow(H_post)
 
-    U, S, V = np.linalg.svd(H_post)
+    U, S, VH = np.linalg.svd(H_post, hermitian=True)
+    V = VH.transpose()
+    # Vk = V[:10, :] an identifiable linear combination of parameters
+
+    E, Q = np.linalg.eig(H_post)  # equivalent (up to sign permulations)
+    E = np.real(E)
+    Q = np.real(Q)
     plt.figure()
-    plt.plot(S, "*")
+    plt.plot(E, "*")
 
     #%%
     plt.figure()

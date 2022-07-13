@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     #%%
     P_post = torch.linalg.inv(H_post) * scaling_P
-    P_y = J @ P_step/scaling_P @ J.t()
+    P_y = J @ (P_post/scaling_P) @ J.t()/(scaling_phi**2)
     W, V = np.linalg.eig(H_lik)
     #plt.plot(W.real, W.imag, "*")
 
@@ -134,8 +134,8 @@ if __name__ == '__main__':
     ax[0].plot(t, y, 'k',  label='$v_C$')
     ax[0].plot(t, y_sim, 'b',  label='$\hat v_C$')
     ax[0].plot(t, y-y_sim, 'r',  label='e')
-    ax[0].plot(t, 6*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
-    ax[0].plot(t, -6*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
+    ax[0].plot(t, 3*np.sqrt(np.diag(P_y)), 'g',  label='$3\sigma$')
+    ax[0].plot(t, -3*np.sqrt(np.diag(P_y)), 'g',  label='$-3\sigma$')
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
     ax[0].set_xlabel(r"Time ($\mu_s$)")
