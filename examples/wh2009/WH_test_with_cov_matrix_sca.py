@@ -23,6 +23,8 @@ if __name__ == '__main__':
     H_post = cov_data["H_post"]
     scaling_H = cov_data["scaling_H"]
     scaling_P = cov_data["scaling_P"]
+
+    P_post = P_post/scaling_P
     #scaling_phi = cov_data["scaling_phi"]
 
 
@@ -82,6 +84,7 @@ if __name__ == '__main__':
     x_sim = []
     y_sim = []
     J_rows = []
+    unc_var_step = []
 
     scaling_phi = np.sqrt(N)
     for time_idx in range(N):
@@ -108,9 +111,10 @@ if __name__ == '__main__':
         # Eq. 14a in the paper (special case, f and g independently parameterized)
         phi_step_1 = J_gx @ s_step
         phi_step_2 = J_gtheta
-        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t() * scaling_phi
+        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t()
+        unc_var_step.append(phi_step.t() @ P_post @ phi_step)  # output variance at time step
 
-        J_rows.append(phi_step.t())
+        #J_rows.append(phi_step.t())
 
         # Current x
         # System update
@@ -130,14 +134,10 @@ if __name__ == '__main__':
 
         s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14a in the paper
 
-    J = torch.cat(J_rows).squeeze(-1)
+    unc_var = torch.cat(unc_var_step)
+    #J = torch.cat(J_rows).squeeze(-1)
     x_sim = torch.stack(x_sim)
     y_sim = torch.stack(y_sim)
-
-    #%%
-    P_y = J @ (P_post/scaling_P) @ J.t()/(scaling_phi**2)
-    W, V = np.linalg.eig(H_post)
-    #plt.plot(W.real, W.imag, "*")
 
     #%%
     y_sim = y_sim.detach().numpy()
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     ax[0].plot(t_test, y_test, 'k', label='$v_C$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat v_C$')
     ax[0].plot(t_test, y_test - y_sim, 'r', label='e')
-    unc_std = np.sqrt(np.diag(P_y)).reshape(-1, 1)
+    unc_std = np.sqrt(unc_var).reshape(-1, 1)
     ax[0].plot(t_test, 6 * unc_std, 'g', label='$6\sigma$')
     ax[0].plot(t_test, -6 * unc_std, 'g', label='$-6\sigma$')
     ax[0].legend(loc='upper right')
