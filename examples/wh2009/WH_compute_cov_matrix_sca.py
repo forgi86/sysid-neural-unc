@@ -27,8 +27,9 @@ if __name__ == '__main__':
     n_u = 1
     n_y = 1
     seq_est_len = 40
-    est_hidden_size = 16
-    hidden_size = 16
+    est_hidden_size = 15
+    hidden_size = 15
+    idx_start = 5000
     n_fit = 10000
 
     no_cuda = True  # no GPU, CPU only training
@@ -48,9 +49,10 @@ if __name__ == '__main__':
 
     # Load dataset
     # %% Load dataset
+    idx_fit_start = idx_start
+    idx_fit_stop = idx_start + n_fit
     t_train, u_train, y_train = wh2009_loader("train", scale=True)
-    t_fit, u_fit, y_fit = t_train[:n_fit], u_train[:n_fit], y_train[:n_fit]
-    # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
+    t_fit, u_fit, y_fit = t_train[idx_fit_start:idx_fit_stop], u_train[idx_fit_start:idx_fit_stop], y_train[idx_fit_start:idx_fit_stop]
     N = t_fit.shape[0]
 
     # Setup neural model structure

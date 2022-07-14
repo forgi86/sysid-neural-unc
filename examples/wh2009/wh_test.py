@@ -19,7 +19,7 @@ if __name__ == '__main__':
     n_x = 6
     n_y = 1
     n_u = 1
-    hidden_size = 16
+    hidden_size = 15
 
     # Load dataset
     t, u, y = wh2009_loader("test", scale=True)
