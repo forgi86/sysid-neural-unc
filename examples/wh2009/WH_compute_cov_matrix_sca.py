@@ -166,8 +166,8 @@ if __name__ == '__main__':
     #%%
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
 
-    ax[0].plot(t_fit, y_fit, 'k',  label='$v_C$')
-    ax[0].plot(t_fit, y_sim, 'b',  label='$\hat v_C$')
+    ax[0].plot(t_fit, y_fit, 'k',  label='$y$')
+    ax[0].plot(t_fit, y_sim, 'b',  label='$\hat y$')
     ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
     unc_std = np.sqrt(np.diag(P_y)).reshape(-1, 1)
     ax[0].plot(t_fit, 6*unc_std, 'g',  label='$6\sigma$')

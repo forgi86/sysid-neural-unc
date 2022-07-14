@@ -145,8 +145,8 @@ if __name__ == '__main__':
     #%%
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
 
-    ax[0].plot(t_test, y_test, 'k', label='$v_C$')
-    ax[0].plot(t_test, y_sim, 'b', label='$\hat v_C$')
+    ax[0].plot(t_test, y_test, 'k', label='$y$')
+    ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
     ax[0].plot(t_test, y_test - y_sim, 'r', label='e')
     unc_std = np.sqrt(unc_var).reshape(-1, 1)
     ax[0].plot(t_test, 6 * unc_std, 'g', label='$6\sigma$')
