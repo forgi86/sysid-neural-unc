@@ -3,6 +3,8 @@ import torch
 import pandas as pd
 import numpy as np
 from models import WHNet3
+import matplotlib
+matplotlib.use("TKAgg")
 import matplotlib.pyplot as plt
 import time
 import torchid.metrics
@@ -18,8 +20,8 @@ if __name__ == '__main__':
     # In[Settings]
     lr_ADAM = 2e-4
     lr_BFGS = 1e0
-    num_iter_ADAM = 40000  # ADAM iterations 20000
-    num_iter_BFGS = 0  # final BFGS iterations
+    num_iter_ADAM = 100000  # ADAM iterations 20000
+    num_iter_BFGS = 10  # final BFGS iterations
     msg_freq = 100
     n_skip = 5000
     n_fit = 20000
@@ -130,7 +132,7 @@ if __name__ == '__main__':
     plt.grid(True)
 
     # In[Plot]
-    e_rms = torchid.metrics.error_rmse(y_hat, y_fit)[0]
+    e_rms = torchid.metrics.rmse(y_hat, y_fit)[0]
     print(f"RMSE: {e_rms:.2f}")  # target: 1mv
 
 

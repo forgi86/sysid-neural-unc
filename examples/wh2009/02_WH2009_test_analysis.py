@@ -19,8 +19,8 @@ if __name__ == '__main__':
     signal_num = 0  # signal used for test (nominal model trained on signal 0)
 
     # Extract data
-    y_meas = np.array(df_X[[f"y{signal_num}"]], dtype=np.float32)
-    u = np.array(df_X[["u"]], dtype=np.float32)
+    y_meas = np.array(df_X[["yBenchMark"]], dtype=np.float32)  # batch, time, channel
+    u = np.array(df_X[["yBenchMark"]], dtype=np.float32)
     fs = 51200
     N = y_meas.size
     ts = 1/fs
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     # In[Metrics]
     R_sq = metrics.r_squared(y_meas, y_sim)[0]
-    rmse = metrics.error_rmse(y_meas, y_sim)[0]
+    rmse = metrics.rmse(y_meas, y_sim)[0]
 
     print(f"R-squared metrics: {R_sq}")
     print(f"RMSE metrics: {rmse}")
