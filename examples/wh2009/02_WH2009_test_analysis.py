@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Extract data
     y_meas = np.array(df_X[["yBenchMark"]], dtype=np.float32)  # batch, time, channel
-    u = np.array(df_X[["yBenchMark"]], dtype=np.float32)
+    u = np.array(df_X[["uBenchMark"]], dtype=np.float32)
     fs = 51200
     N = y_meas.size
     ts = 1/fs
@@ -42,6 +42,26 @@ if __name__ == '__main__':
     model = WHNet3()
     model_folder = os.path.join("models", model_name)
     model.load_state_dict(torch.load(os.path.join(model_folder, "model_wh3.pt")))
+
+    with torch.no_grad():
+        model.G1.b_coeff *= -1
+
+        model.F_nl.net[0].weight *= -1
+        model.F_nl.net[-1].weight *= -1
+        model.F_nl.net[-1].bias *= -1
+        #model.F_nl.net[0].bias *= -1
+        model.G2.b_coeff *= -1
+
+    with torch.no_grad():
+        gainG1 = torch.sum(model.G1.b_coeff) / (1 + torch.sum(model.G1.a_coeff))
+        model.G1.b_coeff /= gainG1
+        model.F_nl.net[0].weight *= gainG1
+
+        gainG2 = torch.sum(model.G2.b_coeff) / (1 + torch.sum(model.G2.a_coeff))
+        model.G2.b_coeff /= gainG2
+        model.F_nl.net[-1].weight *= gainG2
+        model.F_nl.net[-1].bias *= gainG2
+
 
     # In[Simulate]
     with torch.no_grad():
@@ -74,7 +94,7 @@ if __name__ == '__main__':
     plt.plot(y_imp)
     plt.savefig(os.path.join("models", model_name, "G1_imp.pdf"))
     plt.figure()
-    mag_G1, phase_G1, omega_G1 = control.bode(G1_sys, omega_limits=[1e2, 1e5])
+    mag_G1, phase_G1, omega_G1 = control.bode(G1_sys, omega_limits=[1e3, 1e5])
     plt.suptitle("$G_1$ bode plot")
     plt.savefig(os.path.join("models", model_name, "G1_bode.pdf"))
 

@@ -132,8 +132,12 @@ if __name__ == '__main__':
     plt.grid(True)
 
     # In[Plot]
+    R_sq = torchid.metrics.r_squared(y_hat, y_fit)[0]
     e_rms = torchid.metrics.rmse(y_hat, y_fit)[0]
-    print(f"RMSE: {e_rms:.2f}")  # target: 1mv
+
+    print(f"R-squared metrics: {R_sq}")
+    print(f"RMSE metrics: {e_rms}")
+
 
 
 
