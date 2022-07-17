@@ -19,8 +19,8 @@ if __name__ == '__main__':
 
     # In[Settings]
     lr_ADAM = 2e-4
-    lr_BFGS = 1e0
-    num_iter_ADAM = 100000  # ADAM iterations 20000
+    lr_BFGS = 1e-1
+    num_iter_ADAM = 40000  # ADAM iterations 20000
     num_iter_BFGS = 10  # final BFGS iterations
     msg_freq = 100
     n_skip = 5000

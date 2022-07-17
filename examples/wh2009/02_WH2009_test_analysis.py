@@ -117,14 +117,21 @@ if __name__ == '__main__':
 
     in_nl = np.arange(y1_lin_min, y1_lin_max, (y1_lin_max- y1_lin_min)/1000).astype(np.float32).reshape(-1, 1)
 
+    #%%
     with torch.no_grad():
         out_nl = F_nl(torch.as_tensor(in_nl))
         y_lin = model.G1(u_torch)
         y_nl = F_nl(y_lin)
+        out_nl_approx = -torch.nn.functional.elu(-torch.from_numpy(10 / 11 * (in_nl - 0.0)), alpha=1.0) + 0.0
+        #out_nl_approx = -torch.nn.functional.elu(-torch.from_numpy(10 / 11 * (in_nl-0.5)), alpha=1.0) - 0.5
+        #out_nl_approx = -torch.nn.functional.softplus(-torch.from_numpy(10 / 11 * in_nl))
 
     plt.figure()
     plt.plot(in_nl, out_nl, 'b')
     plt.plot(y_lin.squeeze(), y_nl.squeeze(), '*')
+    plt.plot(in_nl, out_nl_approx, 'r')
     plt.xlabel('Static non-linearity input (-)')
     plt.ylabel('Static non-linearity output (-)')
+    plt.xlim([-3, 3])
+    plt.ylim([-3, 3])
     plt.grid(True)
