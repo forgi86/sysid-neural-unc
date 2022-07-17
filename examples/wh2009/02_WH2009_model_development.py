@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from models import WHNet3
+from models import WHNet3, WHSys
 from torchid import metrics
 import control
 
@@ -72,6 +72,8 @@ if __name__ == '__main__':
 
     model.F_nl = ModelNonLin()
 
+    model = WHSys()
+
     # In[Simulate]
     with torch.no_grad():
         y_sim_torch = model(u_torch)
@@ -80,10 +82,10 @@ if __name__ == '__main__':
 
     # In[Metrics]
     R_sq = metrics.r_squared(y_meas, y_sim)[0]
-    rmse = metrics.rmse(y_meas, y_sim)[0]
+    rmse = 1000*metrics.rmse(y_meas, y_sim)[0]
 
     print(f"R-squared metrics: {R_sq}")
-    print(f"RMSE metrics: {rmse}")
+    print(f"RMSE metrics: {rmse} mV")
 
     # In[Plot]
     plt.figure()
