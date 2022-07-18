@@ -9,6 +9,7 @@ from models import WHSys
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from common_input_signals import multisine
 import matplotlib.pyplot as plt
+from torchid import metrics
 
 
 # Truncated simulation error minimization method
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     dtype = torch.float64
     threads = 12  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
-    sigma_noise = 5e-3  # noise variance (could be learnt instead)
+    sigma_noise = 5e-6  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
@@ -63,17 +64,18 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    N = 5000
-    f = 100
-    t_test = ts * np.arange(N).reshape(-1, 1)
-    u_test = 0.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+    #N = 5000
+    #f = 100
+    #t_test = ts * np.arange(N).reshape(-1, 1)
+    #u_test = 0.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
 
     #u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
 
-    #u_test = 1.0*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
-    #u_test = u_test.reshape(-1, 1)
-    #N = u_test.shape[0]
-    #t_test = ts * np.arange(N).reshape(-1, 1)
+    #u_test = 0.67*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
+    u_test = 0.067 * multisine(1000, 5, pmin=1, pmax=100, prule=lambda p: True)
+    u_test = u_test.reshape(-1, 1)
+    N = u_test.shape[0]
+    t_test = ts * np.arange(N).reshape(-1, 1)
 
     with torch.no_grad():
         u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
@@ -160,25 +162,24 @@ if __name__ == '__main__':
     #%%
     y_sim = y_sim.detach().numpy()
     unc_var = unc_var.detach().numpy()
-
+    unc_std = np.sqrt(unc_var).reshape(-1, 1)
     #%%
     fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$y$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
-    unc_std = np.sqrt(unc_var).reshape(-1, 1)
     ax[0].fill_between(t_test.ravel(),
                      (y_sim + 3 * (unc_std + sigma_noise)).ravel(),
                      (y_sim - 3 * (unc_std + sigma_noise)).ravel(),
                      alpha=0.3,
                      color='c')
-    ax[1].plot(t_test, y_test - y_sim, 'r', label='e')
+    ax[1].plot(t_test, 1000*(y_test - y_sim), 'r', label='e')
     ax[1].fill_between(t_test.ravel(),
-                     3 * (unc_std + sigma_noise).ravel(),
-                     -3 * (unc_std + sigma_noise).ravel(),
+                     1000*3 * (unc_std + sigma_noise).ravel(),
+                     1000*-3 * (unc_std + sigma_noise).ravel(),
                      alpha=0.3,
                      color='r')
-    ax[1].set_ylim([-0.05, 0.05])
+    ax[1].set_ylim([-50, 50])
     ax[1].grid()
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
@@ -191,3 +192,9 @@ if __name__ == '__main__':
     ax[2].set_xlabel(r"Time ($s$)")
     ax[2].set_ylabel("Voltage (V)")
 
+    #%%
+    e_rms = 1000 * metrics.rmse(y_test, y_sim)[0]
+    fit_idx = metrics.fit_index(y_test, y_sim)[0]
+    r_sq = metrics.r_squared(y_test, y_sim)[0]
+
+    print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
