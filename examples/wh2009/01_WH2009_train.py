@@ -137,10 +137,3 @@ if __name__ == '__main__':
 
     print(f"R-squared metrics: {R_sq}")
     print(f"RMSE metrics: {e_rms}")
-
-
-
-
-
-
-

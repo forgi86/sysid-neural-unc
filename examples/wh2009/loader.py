@@ -11,8 +11,8 @@ COL_Y = ['yBenchMark']
 idx_train = 100000
 
 
-def wh2009_loader(dataset, scale=True, dtype=np.float32):
-    df_data = pd.read_csv(os.path.join("data", "WienerHammerBenchmark.csv"))
+def wh2009_loader(dataset, scale=True, dtype=np.float32, dataset_name="WienerHammerSys.csv"):
+    df_data = pd.read_csv(os.path.join("data", dataset_name))
     y = np.array(df_data[COL_Y], dtype=dtype)
     u = np.array(df_data[COL_U], dtype=dtype)
     fs = np.array(df_data[COL_F].iloc[0], dtype=np.float32)
@@ -42,8 +42,8 @@ def wh2009_loader(dataset, scale=True, dtype=np.float32):
         return t_test, u_test, y_test
 
 
-def wh2009_scaling():
-    df_data = pd.read_csv(os.path.join("data", "WienerHammerBenchmark.csv"))
+def wh2009_scaling(dataset_name="WienerHammerSys.csv"):
+    df_data = pd.read_csv(os.path.join("data", dataset_name))
     y = np.array(df_data[COL_Y])
     u = np.array(df_data[COL_U])
     fs = np.array(df_data[COL_F].iloc[0], dtype=np.float32)

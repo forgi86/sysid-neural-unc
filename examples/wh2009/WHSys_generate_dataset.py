@@ -11,6 +11,9 @@ import control
 
 if __name__ == '__main__':
 
+    torch.manual_seed(42)
+    np.random.seed(42)
+
     matplotlib.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
     model_name = "model_WH3"
 
@@ -25,6 +28,7 @@ if __name__ == '__main__':
     N = y_meas.size
     ts = 1/fs
     t = np.arange(N)*ts
+    sigma_noise = 5e-3
 
     # Prepare data
     u_torch = torch.tensor(u[None, ...], dtype=torch.float, requires_grad=False)
@@ -38,6 +42,7 @@ if __name__ == '__main__':
         y_sim_torch = model(u_torch)
 
     y_sim = y_sim_torch.numpy()[0, ...]
+    y_sim_noise = y_sim + np.random.randn(*y_sim.shape) * sigma_noise
 
     # In[Metrics]
     R_sq = metrics.r_squared(y_meas, y_sim)[0]
@@ -50,6 +55,7 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(t, y_meas, 'k', label="$y$")
     plt.plot(t, y_sim, 'b', label="$\hat y$")
+    plt.plot(t, y_sim_noise, 'r', label="$\hat y$")
     plt.legend()
 
     # In[Analysis]
@@ -105,7 +111,12 @@ if __name__ == '__main__':
     plt.grid(True)
 
     #%%
-    df_X["yBemchmark"] = y_sim
+
+    df_X["yBenchNoise"] = y_sim_noise
+    df_X["yBenchNoise"] = y_sim
+    df_X = df_X[["uBenchMark", "yBenchMark", "fs", "yBenchNoise"]]
+
     df_X.to_csv(os.path.join("data", "WienerHammerSys.csv"))
+
 
 

@@ -36,7 +36,7 @@ if __name__ == '__main__':
     dtype = torch.float64
     threads = 6  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
-    sigma_noise = 0.02  # noise variance (could be learnt instead)
+    sigma_noise = 5e-3  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     scaling_H = 1/(N * beta_noise)
     scaling_P = 1/scaling_H
-    scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(N)
+    # scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(1/N)
 
     # negative Hessian of the log-prior
     H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
@@ -112,10 +112,10 @@ if __name__ == '__main__':
         # Eq. 14a in the paper (special case, f and g independently parameterized)
         phi_step_1 = J_gx @ s_step
         phi_step_2 = J_gtheta
-        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t() * scaling_phi
+        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t()
 
         J_rows.append(phi_step.t())
-        H_step = H_step + phi_step @ phi_step.t()
+        H_step = H_step + phi_step @ phi_step.t() * 1/N
 
         den = 1 + phi_step.t() @ P_step @ phi_step
         P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
@@ -154,11 +154,10 @@ if __name__ == '__main__':
         "P_post": P_post,
         "scaling_P": scaling_P,
         "scaling_H": scaling_H,
-        "scaling_phi": scaling_phi
     }, os.path.join("models", "covariance.pt"))
 
     #%%
-    P_y = J @ (P_post/scaling_P) @ J.t()/(scaling_phi**2)
+    P_y = J @ (P_post/scaling_P) @ J.t()
     W, V = np.linalg.eig(H_post)
     #plt.plot(W.real, W.imag, "*")
 
