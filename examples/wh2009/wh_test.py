@@ -22,7 +22,7 @@ if __name__ == '__main__':
     hidden_size = 15
 
     # Load dataset
-    t, u, y = wh2009_loader("test", scale=True)
+    t, u, y = wh2009_loader("test", scale=False)
     y_mean, y_std = wh2009_scaling()
 
     #%% Load models and parameters
@@ -43,8 +43,8 @@ if __name__ == '__main__':
         y_sim = model(x0, u_v).squeeze(1)  # remove batch dimension
     y_sim = y_sim.detach().numpy()
 
-    y = y*y_std + y_mean
-    y_sim = y_sim*y_std + y_mean
+    #y = y*y_std + y_mean
+    #y_sim = y_sim*y_std + y_mean
 
     #%% Test
     fig, ax = plt.subplots(1, 1, sharex=True)
@@ -52,8 +52,8 @@ if __name__ == '__main__':
     ax.grid(True)
     ax.plot(y_sim[:, 0], 'b', label=r'$y^{\rm sim}$')
     ax.plot(y[:, 0] - y_sim[:, 0], 'r', label=r'$y-y^{\rm sim}$')
-    ax.set_xlim([40000, 41000])
-    ax.set_ylim([-0.8, 1.0])
+    #ax.set_xlim([40000, 41000])
+    ax.set_ylim([-1.2, 1.2])
     ax.set_xlabel("Sample index (-)")
     ax.set_ylabel("Normalized output (-)")
     ax.legend(loc="upper right")#bbox_to_anchor=(0.9, 1.3), frameon=True)
