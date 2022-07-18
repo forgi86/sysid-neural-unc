@@ -115,11 +115,10 @@ if __name__ == '__main__':
 
     #%%
 
-    df_X["uBenchMark"] = u
-    df_X["yBenchMark"] = y_sim_noise
-    df_X["yBenchMarkClean"] = y_sim
+    df_X = pd.DataFrame({"uBenchMark": u.ravel(),
+                         "yBenchMark": y_sim_noise.ravel(),
+                         "yBenchMarkClean": y_sim.ravel(), "fs": fs})
     df_X = df_X[["uBenchMark", "yBenchMark", "yBenchMarkClean", "fs"]]
-
     df_X.to_csv(os.path.join("data", "WienerHammerSys.csv"), index=False)
 
 
