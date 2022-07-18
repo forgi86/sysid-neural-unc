@@ -150,6 +150,7 @@ if __name__ == '__main__':
     #H_step = H_step.numpy()
 
     torch.save({
+        "H_prior": H_prior/scaling_H,
         "H_post": H_post/scaling_H,
         "P_post": P_post/scaling_P,
         "scaling_P": scaling_P,

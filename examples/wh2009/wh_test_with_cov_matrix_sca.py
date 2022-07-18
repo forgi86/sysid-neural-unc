@@ -24,7 +24,7 @@ if __name__ == '__main__':
     scaling_H = cov_data["scaling_H"]
     scaling_P = cov_data["scaling_P"]
 
-    P_post = P_post/scaling_P
+    # P_post = P_post/scaling_P
     #scaling_phi = cov_data["scaling_phi"]
 
 
@@ -40,11 +40,11 @@ if __name__ == '__main__':
     est_hidden_size = 15
     hidden_size = 15
     idx_start = 5000
-    n_fit = 10000
+    n_fit = 170000
 
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
-    threads = 6  # max number of CPU threads
+    threads = 12  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
     sigma_noise = 0.02  # noise variance (could be learnt instead)
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # %% Load dataset
     idx_fit_start = idx_start
     idx_fit_stop = idx_start + n_fit
-    t_train, u_train, y_train = wh2009_loader("train", scale=True)
+    t_train, u_train, y_train = wh2009_loader("train", scale=False, dataset_name="WienerHammerSysRamp.csv")
     t_test, u_test, y_test = t_train[idx_fit_start:idx_fit_stop], u_train[idx_fit_start:idx_fit_stop], y_train[idx_fit_start:idx_fit_stop]
 
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]

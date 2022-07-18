@@ -60,6 +60,7 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(u)
+
     # In[Analysis]
     n_imp = 128
     G1 = model.G1
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     df_X["yBenchMarkClean"] = y_sim
     df_X = df_X[["uBenchMark", "yBenchMark", "yBenchMarkClean", "fs"]]
 
-    df_X.to_csv(os.path.join("data", "WienerHammerSys.csv"))
+    df_X.to_csv(os.path.join("data", "WienerHammerSys.csv"), index=False)
 
 
 
