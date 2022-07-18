@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # %% Load dataset
     idx_fit_start = idx_start
     idx_fit_stop = idx_start + n_fit
-    t_train, u_train, y_train = wh2009_loader("train", scale=True)
+    t_train, u_train, y_train = wh2009_loader("train", scale=False)
     t_fit, u_fit, y_fit = t_train[idx_fit_start:idx_fit_stop], u_train[idx_fit_start:idx_fit_stop], y_train[idx_fit_start:idx_fit_stop]
     N = t_fit.shape[0]
 
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     #H_step = H_step.numpy()
 
     torch.save({
-        "H_post": H_post,
-        "P_post": P_post,
+        "H_post": H_post/scaling_H,
+        "P_post": P_post/scaling_P,
         "scaling_P": scaling_P,
         "scaling_H": scaling_H,
     }, os.path.join("models", "covariance.pt"))
