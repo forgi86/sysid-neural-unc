@@ -8,6 +8,7 @@ import torchid.ss.dt.models as models
 from models import WHSys
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from loader import wh2009_loader
+from common_input_signals import multisine
 import matplotlib.pyplot as plt
 
 
@@ -62,10 +63,16 @@ if __name__ == '__main__':
     ts = 1/fs
 
     sys = WHSys()
-    N = 5000
-    f = 100
+
+    #N = 5000
+    #f = 100
+    #t_test = ts * np.arange(N).reshape(-1, 1)
+    #u_test = 1.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+
+    u_test = 0.5*multisine(1000, 5, pmin=1, pmax=10, prule=lambda p: True)
+    u_test = u_test.reshape(-1, 1)
+    N = u_test.shape[0]
     t_test = ts * np.arange(N).reshape(-1, 1)
-    u_test = 0.3*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
 
     with torch.no_grad():
         u_torch = torch.tensor(u_test[None, ...], dtype=dtype)

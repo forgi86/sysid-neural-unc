@@ -39,8 +39,6 @@ if __name__ == '__main__':
     seq_est_len = 40
     est_hidden_size = 15
     hidden_size = 15
-    idx_start = 5000
-    n_fit = 170000
 
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
@@ -59,9 +57,8 @@ if __name__ == '__main__':
 
     # Load dataset
     # %% Load dataset
-    idx_fit_start = idx_start
-    idx_fit_stop = idx_start + n_fit
-    t_test, u_test, y_test = wh2009_loader("train", scale=False, dataset_name="WienerHammerSysRamp.csv")
+    #t_test, u_test, y_test = wh2009_loader("test", scale=False, dataset_name="WienerHammerSys.csv")
+    t_test, u_test, y_test = wh2009_loader("full", scale=False, dataset_name="WienerHammerSysRamp.csv")
 
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
     N = t_test.shape[0]
