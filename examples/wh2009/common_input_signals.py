@@ -76,5 +76,5 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use("TKAgg")
     import matplotlib.pyplot as plt
-    u = multisine(1000, 5, pmin=1, pmax=10, prule=lambda p: True)
+    u = multisine(1000, 5, pmin=250, pmax=499, prule=lambda p: True)
     plt.plot(u)

@@ -7,7 +7,6 @@ import torch.nn as nn
 import torchid.ss.dt.models as models
 from models import WHSys
 from torchid.ss.dt.simulator import StateSpaceSimulator
-from loader import wh2009_loader
 from common_input_signals import multisine
 import matplotlib.pyplot as plt
 
@@ -64,15 +63,17 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    #N = 5000
-    #f = 100
-    #t_test = ts * np.arange(N).reshape(-1, 1)
-    #u_test = 1.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
-
-    u_test = 0.5*multisine(1000, 5, pmin=1, pmax=10, prule=lambda p: True)
-    u_test = u_test.reshape(-1, 1)
-    N = u_test.shape[0]
+    N = 5000
+    f = 100
     t_test = ts * np.arange(N).reshape(-1, 1)
+    u_test = 0.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+
+    #u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
+
+    #u_test = 1.0*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
+    #u_test = u_test.reshape(-1, 1)
+    #N = u_test.shape[0]
+    #t_test = ts * np.arange(N).reshape(-1, 1)
 
     with torch.no_grad():
         u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
@@ -106,7 +107,6 @@ if __name__ == '__main__':
     J_rows = []
     unc_var_step = []
 
-    scaling_phi = np.sqrt(N)
     for time_idx in range(N):
         # print(time_idx)
 
@@ -159,24 +159,35 @@ if __name__ == '__main__':
 
     #%%
     y_sim = y_sim.detach().numpy()
+    unc_var = unc_var.detach().numpy()
 
     #%%
-    fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
+    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$y$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
-    ax[0].plot(t_test, y_test - y_sim, 'r', label='e')
     unc_std = np.sqrt(unc_var).reshape(-1, 1)
-    ax[0].plot(t_test, 3 * (unc_std + sigma_noise), 'g', label='$3\sigma$')
-    ax[0].plot(t_test, -3 * (unc_std + sigma_noise), 'g', label='$-3\sigma$')
+    ax[0].fill_between(t_test.ravel(),
+                     (y_sim + 3 * (unc_std + sigma_noise)).ravel(),
+                     (y_sim - 3 * (unc_std + sigma_noise)).ravel(),
+                     alpha=0.3,
+                     color='c')
+    ax[1].plot(t_test, y_test - y_sim, 'r', label='e')
+    ax[1].fill_between(t_test.ravel(),
+                     3 * (unc_std + sigma_noise).ravel(),
+                     -3 * (unc_std + sigma_noise).ravel(),
+                     alpha=0.3,
+                     color='r')
+    ax[1].set_ylim([-0.05, 0.05])
+    ax[1].grid()
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
-    ax[0].set_xlabel(r"Time ($\mu_s$)")
-    ax[0].set_ylabel("Current (A)")
+    ax[0].set_xlabel(r"Time ($s$)")
+    ax[0].set_ylabel("Voltage (V)")
 
-    ax[1].plot(t_test, u, 'k', label='$v_{in}$')
-    ax[1].legend(loc='upper right')
-    ax[1].grid(True)
-    ax[1].set_xlabel(r"Time ($\mu_s$)")
-    ax[1].set_ylabel("Voltage (V)")
+    ax[2].plot(t_test, u, 'k', label='$v_{in}$')
+    ax[2].legend(loc='upper right')
+    ax[2].grid(True)
+    ax[2].set_xlabel(r"Time ($s$)")
+    ax[2].set_ylabel("Voltage (V)")
 
