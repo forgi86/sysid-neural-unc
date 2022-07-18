@@ -5,6 +5,7 @@ import matplotlib
 matplotlib.use("TKAgg")
 import torch.nn as nn
 import torchid.ss.dt.models as models
+from models import WHSys
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from loader import wh2009_loader
 import matplotlib.pyplot as plt
@@ -39,14 +40,12 @@ if __name__ == '__main__':
     seq_est_len = 40
     est_hidden_size = 15
     hidden_size = 15
-    idx_start = 5000
-    n_fit = 170000
 
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
     threads = 12  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
-    sigma_noise = 0.02  # noise variance (could be learnt instead)
+    sigma_noise = 5e-3  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
@@ -59,13 +58,23 @@ if __name__ == '__main__':
 
     # Load dataset
     # %% Load dataset
-    idx_fit_start = idx_start
-    idx_fit_stop = idx_start + n_fit
-    t_train, u_train, y_train = wh2009_loader("train", scale=False, dataset_name="WienerHammerSysRamp.csv")
-    t_test, u_test, y_test = t_train[idx_fit_start:idx_fit_stop], u_train[idx_fit_start:idx_fit_stop], y_train[idx_fit_start:idx_fit_stop]
+    fs = 51200
+    ts = 1/fs
+
+    sys = WHSys()
+    N = 5000
+    f = 100
+    t_test = ts * np.arange(N).reshape(-1, 1)
+    u_test = 0.3*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+
+    with torch.no_grad():
+        u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
+        y_sim_torch = sys(u_torch)
+
+    y_test_clean = y_sim_torch.numpy()[0, ...]
+    y_test = y_test_clean + np.random.randn(*y_test_clean.shape) * sigma_noise
 
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
-    N = t_test.shape[0]
 
     # Setup neural model structure
     f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_sizes=[hidden_size], hidden_acts=[nn.Tanh()]).to(device)
@@ -151,8 +160,8 @@ if __name__ == '__main__':
     ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
     ax[0].plot(t_test, y_test - y_sim, 'r', label='e')
     unc_std = np.sqrt(unc_var).reshape(-1, 1)
-    ax[0].plot(t_test, 6 * unc_std, 'g', label='$6\sigma$')
-    ax[0].plot(t_test, -6 * unc_std, 'g', label='$-6\sigma$')
+    ax[0].plot(t_test, 3 * (unc_std + sigma_noise), 'g', label='$3\sigma$')
+    ax[0].plot(t_test, -3 * (unc_std + sigma_noise), 'g', label='$-3\sigma$')
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
     ax[0].set_xlabel(r"Time ($\mu_s$)")

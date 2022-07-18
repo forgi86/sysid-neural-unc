@@ -24,6 +24,9 @@ if __name__ == '__main__':
     # Extract data
     y_meas = np.array(df_X[["yBenchMark"]], dtype=np.float32)  # batch, time, channel
     u = np.array(df_X[["uBenchMark"]], dtype=np.float32)
+    u = u[:40_000, :]
+    y_meas = y_meas[:40_000, :]
+
     fs = 51200
     N = y_meas.size
     ts = 1/fs
