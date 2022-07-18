@@ -55,9 +55,11 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(t, y_meas, 'k', label="$y$")
     plt.plot(t, y_sim, 'b', label="$\hat y$")
-    plt.plot(t, y_sim_noise, 'r', label="$\hat y$")
+    plt.plot(t, y_sim_noise, 'r', label="$\hat y$ noise")
     plt.legend()
 
+    plt.figure()
+    plt.plot(u)
     # In[Analysis]
     n_imp = 128
     G1 = model.G1
@@ -112,9 +114,10 @@ if __name__ == '__main__':
 
     #%%
 
-    df_X["yBenchNoise"] = y_sim_noise
-    df_X["yBenchNoise"] = y_sim
-    df_X = df_X[["uBenchMark", "yBenchMark", "fs", "yBenchNoise"]]
+    df_X["uBenchMark"] = u
+    df_X["yBenchMark"] = y_sim_noise
+    df_X["yBenchMarkClean"] = y_sim
+    df_X = df_X[["uBenchMark", "yBenchMark", "yBenchMarkClean", "fs"]]
 
     df_X.to_csv(os.path.join("data", "WienerHammerSys.csv"))
 

@@ -189,7 +189,7 @@ if __name__ == '__main__':
     model.load_state_dict(model_data["model"])
     estimator.load_state_dict(model_data["estimator"])
 
-    t_full, u_full, y_full = wh2009_loader("full", scale=True)
+    t_full, u_full, y_full = wh2009_loader("full", scale=False)
     with torch.no_grad():
         model.eval()
         estimator.eval()
