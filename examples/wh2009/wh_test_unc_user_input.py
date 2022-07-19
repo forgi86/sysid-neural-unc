@@ -72,9 +72,11 @@ if __name__ == '__main__':
     #u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
 
     #u_test = 0.67*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
-    u_test = 0.067 * multisine(1000, 5, pmin=1, pmax=100, prule=lambda p: True)
-    u_test = u_test.reshape(-1, 1)
-    N = u_test.shape[0]
+    #u_test = 0.067 * multisine(1000, 5, pmin=1, pmax=100, prule=lambda p: True)
+    #u_test = u_test.reshape(-1, 1)
+    #N = u_test.shape[0]
+    N = 1000
+    u_test = 0.5*np.ones((N, 1))
     t_test = ts * np.arange(N).reshape(-1, 1)
 
     with torch.no_grad():
