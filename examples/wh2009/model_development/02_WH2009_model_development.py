@@ -146,3 +146,14 @@ if __name__ == '__main__':
     plt.xlim([-3, 3])
     plt.ylim([-3, 3])
     plt.grid(True)
+
+    # Idealized models of G1 and G2
+    import scipy
+    b1, a1 = scipy.signal.cheby1(N=3, rp=0.5, Wn=4.4e3, btype='low', analog=False, output='ba', fs=fs)
+    G11 = control.TransferFunction(b1, a1, ts)
+
+    plt.figure()
+    control.bode(G11, omega_limits=[1e2, 1e5], Hz=True)
+
+    b2, a2 = scipy.signal.cheby2(N=3, rs=40, Wn=5e3, btype='low', analog=False, output='ba', fs=fs)
+    G22 = control.TransferFunction(b2, a2, ts)

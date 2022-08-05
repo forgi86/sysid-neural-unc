@@ -126,7 +126,6 @@ if __name__ == '__main__':
     df_X = df_X[["uBenchMark", "yBenchMark", "yBenchMarkClean", "fs"]]
     df_X.to_csv(os.path.join("data", "WienerHammerSysMs.csv"), index=False)
 
-
     # %%
     import scipy
     b1, a1 = scipy.signal.cheby1(N=3, rp=0.5, Wn=4.4e3, btype='low', analog=False, output='ba', fs=fs)

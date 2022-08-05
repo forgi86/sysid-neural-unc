@@ -67,19 +67,19 @@ if __name__ == '__main__':
     # Sine test
     N = 5_000
 
-    f = 3_000
-    t_test = ts * np.arange(N).reshape(-1, 1)
-    u_test = 1.0*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+    #f = 3_000
+    #t_test = ts * np.arange(N).reshape(-1, 1)
+    #u_test = 1.0*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
 
     # u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
     # u_test = 0.67*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
     # u_test = 0.8 * multisine(1000, 5, pmin=1, pmax=50, prule=lambda p: True) #
 
     ## multisine tests ##
-    # T = 10_000
+    T = 10_000
 
-    #pmax = 500  # equivalent to training data
-    #a = 0.4  # equivalent to training
+    pmax = 500  # equivalent to training data
+    a = 0.4  # equivalent to training
 
     #pmax = 2_000  # includes the transmission 0
     #a = 0.4  # equivalent to training
@@ -93,16 +93,18 @@ if __name__ == '__main__':
     #pmax = 500  # equivalent to training data
     #a = 0.2   # smaller than training
 
-    #u_test = a * multisine(T, 1, pmin=1, pmax=pmax, prule=lambda p: True)
-    #fmax = pmax/T * fs
+    u_test = a * multisine(T, 1, pmin=1, pmax=pmax, prule=lambda p: True)
+    fmax = pmax/T * fs
 
-    #u_test = u_test.reshape(-1, 1)
-    #N = u_test.shape[0]
+    u_test = u_test.reshape(-1, 1)
+    N = u_test.shape[0]
 
     # Step test
     #N = 1_000
     #u_test = 0.5*np.ones((N, 1))
-    #t_test = ts * np.arange(N).reshape(-1, 1)
+
+    # for all signals
+    t_test = ts * np.arange(N).reshape(-1, 1)
 
     with torch.no_grad():
         u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
