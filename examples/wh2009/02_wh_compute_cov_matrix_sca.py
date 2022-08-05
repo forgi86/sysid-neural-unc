@@ -29,8 +29,9 @@ if __name__ == '__main__':
     seq_est_len = 40
     est_hidden_size = 15
     hidden_size = 15
-    idx_start = 5000
-    n_fit = 10000
+    idx_start = 0 #5000
+    n_fit = 10_000
+    n_val = 5_000
 
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64

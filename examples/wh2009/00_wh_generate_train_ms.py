@@ -5,8 +5,7 @@ import torch
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from models import WHNet3, WHSys
-from torchid import metrics
+from models import WHSys
 import control
 from common_input_signals import multisine
 
@@ -23,10 +22,12 @@ if __name__ == '__main__':
 
     # Generate data
     fs = 51200
-    T = 10_000
-    pmax = 500
-    fmax = pmax/T * fs
-    u = 0.4 * multisine(T, 4, pmin=1, pmax=pmax, prule=lambda p: True)
+    T = 40_000
+    #pmax = 2000
+    #fmax = pmax/T * fs
+    fmax = 2000
+    pmax = int(T*fmax/fs)
+    u = 0.4 * multisine(T, 1, pmin=1, pmax=pmax, prule=lambda p: True)
     u = u.reshape(-1, 1)
 
     N = u.size
@@ -125,18 +126,3 @@ if __name__ == '__main__':
                          "yBenchMarkClean": y_sim.ravel(), "fs": fs})
     df_X = df_X[["uBenchMark", "yBenchMark", "yBenchMarkClean", "fs"]]
     df_X.to_csv(os.path.join("data", "WienerHammerSysMs.csv"), index=False)
-
-    # %%
-    import scipy
-    b1, a1 = scipy.signal.cheby1(N=3, rp=0.5, Wn=4.4e3, btype='low', analog=False, output='ba', fs=fs)
-    G11 = control.TransferFunction(b1, a1, ts)
-
-    plt.figure()
-    control.bode(G11, omega_limits=[1e2, 1e5], Hz=True)
-    control.bode(G1_sys, omega_limits=[1e2, 1e5], Hz=True)
-
-    b2, a2 = scipy.signal.cheby2(N=3, rs=40, Wn=5e3, btype='low', analog=False, output='ba', fs=fs)
-    G22 = control.TransferFunction(b2, a2, ts)
-    plt.figure()
-    control.bode(G22, omega_limits=[1e2, 1e5], Hz=True)
-    control.bode(G2_sys, omega_limits=[1e2, 1e5], Hz=True)

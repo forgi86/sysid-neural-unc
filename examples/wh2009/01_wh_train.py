@@ -17,10 +17,10 @@ if __name__ == '__main__':
 
     save_folder = "models"
 
-    epochs_adam = 100
-    epochs_bfgs = 10
+    epochs_adam = 120
+    epochs_bfgs = 4
     epochs_lin = 20
-    batch_size = 512
+    batch_size = 256
     seq_fit_len = 256
     seq_est_len = 40
     est_hidden_size = 15

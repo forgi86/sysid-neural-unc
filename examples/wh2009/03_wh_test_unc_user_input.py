@@ -64,27 +64,22 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    # Sine test
-    N = 5_000
-
+    ## Sine test ##
+    #N = 5_000
     #f = 3_000
-    #t_test = ts * np.arange(N).reshape(-1, 1)
-    #u_test = 1.0*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+    #u_test = 1.0*np.sin(2*np.pi*f*t_test)
 
-    # u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
-    # u_test = 0.67*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
-    # u_test = 0.8 * multisine(1000, 5, pmin=1, pmax=50, prule=lambda p: True) #
 
     ## multisine tests ##
-    T = 10_000
+    N = 5_000
 
-    pmax = 500  # equivalent to training data
+    fmax = 2000  # equivalent to training data
     a = 0.4  # equivalent to training
 
-    #pmax = 2_000  # includes the transmission 0
+    #fmax = 10_000  # includes the transmission 0
     #a = 0.4  # equivalent to training
 
-    #pmax = 500  # equivalent to training data
+    #fmax = 2000  # equivalent to training data
     #a = 0.8
 
     #pmax = 100  # much smaller than training data
@@ -93,18 +88,17 @@ if __name__ == '__main__':
     #pmax = 500  # equivalent to training data
     #a = 0.2   # smaller than training
 
-    u_test = a * multisine(T, 1, pmin=1, pmax=pmax, prule=lambda p: True)
-    fmax = pmax/T * fs
+    pmax = int(N*fmax/fs)
+    u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
 
-    u_test = u_test.reshape(-1, 1)
-    N = u_test.shape[0]
 
     # Step test
-    #N = 1_000
-    #u_test = 0.5*np.ones((N, 1))
+    #N = 500
+    #u_test = 1.2*np.ones((N, 1))
 
     # for all signals
     t_test = ts * np.arange(N).reshape(-1, 1)
+    u_test = u_test.reshape(-1, 1)
 
     with torch.no_grad():
         u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
@@ -230,8 +224,5 @@ if __name__ == '__main__':
     print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
 
     #%%
-    plt.figure()
-    plt.plot(t_test, unc_std/(np.abs(y_sim)+1e-3))
-
     surprise = 100*np.mean(np.abs(unc_std)) / np.mean(np.abs(y_sim))
     print(f"surprise: {surprise:.5f}")
