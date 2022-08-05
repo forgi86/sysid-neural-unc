@@ -40,9 +40,9 @@ if __name__ == '__main__':
     n_x = 6
     n_u = 1
     n_y = 1
-    idx_start = 5000
-    n_fit = 10000
-    n_val = 5000
+    idx_start = 0 #5000
+    n_fit = 10_000
+    n_val = 5_000
 
     epochs = epochs_adam + epochs_bfgs
 

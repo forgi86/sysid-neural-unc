@@ -20,14 +20,15 @@ if __name__ == '__main__':
     model_name = "model_WH3"
 
     # Load dataset
-    df_X = pd.read_csv(os.path.join("data", "WienerHammerBenchmark.csv"))
-    signal_num = 0  # signal used for test (nominal model trained on signal 0)
 
-    # Extract data
-    u = 0.4 * multisine(10_000, 4, pmin=1, pmax=2_000, prule=lambda p: True)
+    # Generate data
+    fs = 51200
+    T = 10_000
+    pmax = 500
+    fmax = pmax/T * fs
+    u = 0.4 * multisine(T, 4, pmin=1, pmax=pmax, prule=lambda p: True)
     u = u.reshape(-1, 1)
 
-    fs = 51200
     N = u.size
     ts = 1/fs
     t = np.arange(N)*ts
@@ -75,11 +76,11 @@ if __name__ == '__main__':
     _, y_imp = control.impulse_response(G1_sys, np.arange(n_imp) * ts)
     #    plt.plot(G1_num)
     plt.plot(y_imp)
-    plt.savefig(os.path.join("models", model_name, "G1_imp.pdf"))
+    #plt.savefig(os.path.join("models", model_name, "G1_imp.pdf"))
     plt.figure()
-    mag_G1, phase_G1, omega_G1 = control.bode(G1_sys, omega_limits=[1e3, 1e5])
+    mag_G1, phase_G1, omega_G1 = control.bode(G1_sys, omega_limits=[1e3, 1e5], Hz=True)
     plt.suptitle("$G_1$ bode plot")
-    plt.savefig(os.path.join("models", model_name, "G1_bode.pdf"))
+    #plt.savefig(os.path.join("models", model_name, "G1_bode.pdf"))
 
     G2 = model.G2
     G2_num, G2_den = G2.get_tfdata()
@@ -88,11 +89,11 @@ if __name__ == '__main__':
     plt.title("$G_2$ impulse response")
     _, y_imp = control.impulse_response(G2_sys, np.arange(n_imp) * ts)
     plt.plot(y_imp)
-    plt.savefig(os.path.join("models", model_name, "G1_imp.pdf"))
+    #plt.savefig(os.path.join("models", model_name, "G1_imp.pdf"))
     plt.figure()
-    mag_G2, phase_G2, omega_G2 = control.bode(G2_sys, omega_limits=[1e2, 1e5])
+    mag_G2, phase_G2, omega_G2 = control.bode(G2_sys, omega_limits=[1e2, 1e5], Hz=True)
     plt.suptitle("$G_2$ bode plot")
-    plt.savefig(os.path.join("models", model_name, "G2_bode.pdf"))
+    #plt.savefig(os.path.join("models", model_name, "G2_bode.pdf"))
 
     F_nl = model.F_nl
     y1_lin_min = -5.0  #np.min(y1_lin)
@@ -126,4 +127,17 @@ if __name__ == '__main__':
     df_X.to_csv(os.path.join("data", "WienerHammerSysMs.csv"), index=False)
 
 
+    # %%
+    import scipy
+    b1, a1 = scipy.signal.cheby1(N=3, rp=0.5, Wn=4.4e3, btype='low', analog=False, output='ba', fs=fs)
+    G11 = control.TransferFunction(b1, a1, ts)
 
+    plt.figure()
+    control.bode(G11, omega_limits=[1e2, 1e5], Hz=True)
+    control.bode(G1_sys, omega_limits=[1e2, 1e5], Hz=True)
+
+    b2, a2 = scipy.signal.cheby2(N=3, rs=40, Wn=5e3, btype='low', analog=False, output='ba', fs=fs)
+    G22 = control.TransferFunction(b2, a2, ts)
+    plt.figure()
+    control.bode(G22, omega_limits=[1e2, 1e5], Hz=True)
+    control.bode(G2_sys, omega_limits=[1e2, 1e5], Hz=True)

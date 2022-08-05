@@ -67,7 +67,7 @@ class WHF(torch.nn.Module):
 
 
 class WHSys(torch.nn.Module):
-    def __init__(self, nb_1=3, na_1=3, nb_2=3, na_2=3):
+    def __init__(self, nb_1=4, na_1=3, nb_2=4, na_2=3):
         super(WHSys, self).__init__()
         self.nb_1 = nb_1
         self.na_1 = na_1
@@ -78,10 +78,10 @@ class WHSys(torch.nn.Module):
         self.G2 = SisoLinearDynamicalOperator(n_b=self.nb_2, n_a=self.na_2, n_k=0)
 
         with torch.no_grad():
-            self.G1.a_coeff[:] = torch.tensor([[[-1.2091,  0.2653,  0.1169]]])
-            self.G1.b_coeff[:] = torch.tensor([[[0.2323, -0.6494,  0.5902]]])
-            self.G2.a_coeff[:] = torch.tensor([[[-1.2303, -0.1718,  0.4465]]])
-            self.G2.b_coeff[:] = torch.tensor([[[0.0957, -0.1619,  0.1107]]])
+            self.G1.a_coeff[:] = torch.tensor([[[-2.15194151,  1.74472958, -0.51076768]]])   #torch.tensor([[[-1.2091,  0.2653,  0.1169]]])
+            self.G1.b_coeff[:] = torch.tensor([[[0.01025255, 0.03075765, 0.03075765, 0.01025255]]])  # torch.tensor([[[0.2323, -0.6494,  0.5902]]])
+            self.G2.a_coeff[:] = torch.tensor([[[-2.57486717,  2.23571655, -0.65262923]]]) #torch.tensor([[[-1.2303, -0.1718,  0.4465]]])
+            self.G2.b_coeff[:] = torch.tensor([[[0.00870616, -0.00459609, -0.00459609,  0.00870616]]]) #torch.tensor([[[0.0957, -0.1619,  0.1107]]])
 
     def forward(self, u):
         y1_lin = self.G1(u)

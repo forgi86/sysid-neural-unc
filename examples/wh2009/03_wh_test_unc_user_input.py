@@ -5,9 +5,11 @@ import matplotlib
 matplotlib.use("TKAgg")
 import torch.nn as nn
 import torchid.ss.dt.models as models
+from models import WHSys
 from torchid.ss.dt.simulator import StateSpaceSimulator
-from loader import wh2009_loader
+from common_input_signals import multisine
 import matplotlib.pyplot as plt
+from torchid import metrics
 
 
 # Truncated simulation error minimization method
@@ -15,8 +17,18 @@ if __name__ == '__main__':
 
     model_filename = "model.pt"
     model_data = torch.load(os.path.join("models", model_filename))
-    #hidden_sizes = model_data["hidden_sizes"]
-    #hidden_acts = model_data["hidden_acts"]
+
+    cov_filename = "covariance.pt"
+    cov_data = torch.load(os.path.join("models", cov_filename))
+
+    P_post = cov_data["P_post"]
+    H_post = cov_data["H_post"]
+    scaling_H = cov_data["scaling_H"]
+    scaling_P = cov_data["scaling_P"]
+
+    # P_post = P_post/scaling_P
+    #scaling_phi = cov_data["scaling_phi"]
+
 
     # Set seed for reproducibility
     np.random.seed(0)
@@ -29,14 +41,12 @@ if __name__ == '__main__':
     seq_est_len = 40
     est_hidden_size = 15
     hidden_size = 15
-    idx_start = 5000
-    n_fit = 10000
 
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
-    threads = 6  # max number of CPU threads
+    threads = 12  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
-    sigma_noise = 5e-3  # noise variance (could be learnt instead)
+    sigma_noise = 5e-6  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
@@ -49,11 +59,43 @@ if __name__ == '__main__':
 
     # Load dataset
     # %% Load dataset
-    idx_fit_start = idx_start
-    idx_fit_stop = idx_start + n_fit
-    t_train, u_train, y_train = wh2009_loader("train", scale=False)
-    t_fit, u_fit, y_fit = t_train[idx_fit_start:idx_fit_stop], u_train[idx_fit_start:idx_fit_stop], y_train[idx_fit_start:idx_fit_stop]
-    N = t_fit.shape[0]
+    fs = 51200
+    ts = 1/fs
+
+    sys = WHSys()
+
+    #N = 5000
+    #f = 100
+    #t_test = ts * np.arange(N).reshape(-1, 1)
+    #u_test = 0.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+
+    # u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
+    # u_test = 0.67*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
+    # u_test = 0.8 * multisine(1000, 5, pmin=1, pmax=50, prule=lambda p: True) #
+
+    T = 1_000
+    pmax = 50
+    fmax = pmax/T * fs
+    u_test = 0.4 * multisine(T, 5, pmin=1, pmax=pmax, prule=lambda p: True)
+
+    u_test = u_test.reshape(-1, 1)
+    N = u_test.shape[0]
+
+    # Step
+    #N = 1000
+    #u_test = 0.5*np.ones((N, 1))
+
+
+    t_test = ts * np.arange(N).reshape(-1, 1)
+
+    with torch.no_grad():
+        u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
+        y_sim_torch = sys(u_torch)
+
+    y_test_clean = y_sim_torch.numpy()[0, ...]
+    y_test = y_test_clean + np.random.randn(*y_test_clean.shape) * sigma_noise
+
+    # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
 
     # Setup neural model structure
     f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_sizes=[hidden_size], hidden_acts=[nn.Tanh()]).to(device)
@@ -69,24 +111,14 @@ if __name__ == '__main__':
 
     # Evaluate the model in open-loop simulation against validation data
 
-    u = torch.from_numpy(u_fit)
+    u = torch.from_numpy(u_test)
     x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
     s_step = torch.zeros(n_x, n_fparam, dtype=dtype)
-
-    scaling_H = 1/(N * beta_noise)
-    scaling_P = 1/scaling_H
-    # scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(1/N)
-
-    # negative Hessian of the log-prior
-    H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
-    P_prior = torch.eye(n_param, dtype=dtype) / beta_prior * scaling_P
-    P_step = P_prior  # prior parameter covariance
-    H_step = torch.zeros((n_param, n_param), dtype=dtype)
-    #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance
 
     x_sim = []
     y_sim = []
     J_rows = []
+    unc_var_step = []
 
     for time_idx in range(N):
         # print(time_idx)
@@ -109,17 +141,11 @@ if __name__ == '__main__':
         jacs_gtheta_f = [torch.cat([jac.ravel() for jac in jacs_gtheta[j]]) for j in range(n_y)]  # ravel jacobian rows
         J_gtheta = torch.stack(jacs_gtheta_f)  # stack jacobian rows to obtain a jacobian matrix
 
-        # Eq. 14a in the paper (special case, f and g independently parameterized)
+        # Eq. 14a in the fast adaptation paper (special case, f and g independently parameterized)
         phi_step_1 = J_gx @ s_step
         phi_step_2 = J_gtheta
         phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t()
-
-        J_rows.append(phi_step.t())
-        H_step = H_step + phi_step @ phi_step.t() * 1/N
-
-        den = 1 + phi_step.t() @ P_step @ phi_step
-        P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
-        P_step = P_step + P_tmp
+        unc_var_step.append(phi_step.t() @ P_post @ phi_step)  # output variance at time step
 
         # Current x
         # System update
@@ -137,96 +163,49 @@ if __name__ == '__main__':
 
         x_step = (x_step + delta_x).detach().requires_grad_(True)
 
-        s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14a in the paper
+        s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14a in the fast adaptation paper
 
-    J = torch.cat(J_rows).squeeze(-1)
+    unc_var = torch.cat(unc_var_step)
+    #J = torch.cat(J_rows).squeeze(-1)
     x_sim = torch.stack(x_sim)
     y_sim = torch.stack(y_sim)
 
-    # information matrix (or approximate negative Hessian of the log-likelihood)
-    H_post = H_prior + H_step
-    P_post = torch.linalg.pinv(H_post)
-    #P_step = P_step.numpy()
-    #H_step = H_step.numpy()
-
-    torch.save({
-        "H_prior": H_prior/scaling_H,
-        "H_post": H_post/scaling_H,
-        "P_post": P_post/scaling_P,
-        "scaling_P": scaling_P,
-        "scaling_H": scaling_H,
-    }, os.path.join("models", "covariance.pt"))
-
-    #%%
-    P_y = J @ (P_post/scaling_P) @ J.t()
-    W, V = np.linalg.eig(H_post)
-    #plt.plot(W.real, W.imag, "*")
-
     #%%
     y_sim = y_sim.detach().numpy()
-
+    unc_var = unc_var.detach().numpy()
+    unc_std = np.sqrt(unc_var).reshape(-1, 1)
     #%%
-    fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
+    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
-    ax[0].plot(t_fit, y_fit, 'k',  label='$y$')
-    ax[0].plot(t_fit, y_sim, 'b',  label='$\hat y$')
-    ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
-    unc_std = np.sqrt(np.diag(P_y)).reshape(-1, 1)
-    ax[0].plot(t_fit, 6*unc_std, 'g',  label='$6\sigma$')
-    ax[0].plot(t_fit, -6*unc_std, 'g',  label='$-6\sigma$')
+    ax[0].plot(t_test, y_test, 'k', label='$y$')
+    ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
+    ax[0].fill_between(t_test.ravel(),
+                     (y_sim + 3 * (unc_std + sigma_noise)).ravel(),
+                     (y_sim - 3 * (unc_std + sigma_noise)).ravel(),
+                     alpha=0.3,
+                     color='c')
+    ax[1].plot(t_test, 1000*(y_test - y_sim), 'r', label='e')
+    ax[1].fill_between(t_test.ravel(),
+                     1000*3 * (unc_std + sigma_noise).ravel(),
+                     1000*-3 * (unc_std + sigma_noise).ravel(),
+                     alpha=0.3,
+                     color='r')
+    ax[1].set_ylim([-50, 50])
+    ax[1].grid()
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
-    ax[0].set_xlabel(r"Time ($\mu_s$)")
-    ax[0].set_ylabel("Current (A)")
+    ax[0].set_xlabel(r"Time ($s$)")
+    ax[0].set_ylabel("Voltage (V)")
 
-    ax[1].plot(t_fit, u, 'k',  label='$v_{in}$')
-    ax[1].legend(loc='upper right')
-    ax[1].grid(True)
-    ax[1].set_xlabel(r"Time ($\mu_s$)")
-    ax[1].set_ylabel("Voltage (V)")
-
-
-    #%%
-    fig, ax = plt.subplots(1, 2)
-    ax[0].set_title("Covariance")
-    ax[0].matshow(P_post)
-    ax[1].set_title("Covariance Inverse")
-    ax[1].matshow(H_post)
-
-    U, S, VH = np.linalg.svd(H_post, hermitian=True)
-    V = VH.transpose()
-    # Vk = V[:10, :] an identifiable linear combination of parameters
-
-    E, Q = np.linalg.eig(H_post)  # equivalent (up to sign permulations)
-    E = np.real(E)
-    Q = np.real(Q)
-    plt.figure()
-    plt.plot(E, "*")
+    ax[2].plot(t_test, u, 'k', label='$v_{in}$')
+    ax[2].legend(loc='upper right')
+    ax[2].grid(True)
+    ax[2].set_xlabel(r"Time ($s$)")
+    ax[2].set_ylabel("Voltage (V)")
 
     #%%
-    plt.figure()
-    plt.suptitle("Covariance Inverse")
-    plt.imshow(H_step)
-    plt.colorbar()
-    plt.show()
+    e_rms = 1000 * metrics.rmse(y_test, y_sim)[0]
+    fit_idx = metrics.fit_index(y_test, y_sim)[0]
+    r_sq = metrics.r_squared(y_test, y_sim)[0]
 
-    #%%
-
-    plt.figure()
-    plt.suptitle("Covariance")
-    plt.imshow(P_post)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance Recursive")
-    plt.imshow(P_step)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance error")
-    plt.imshow(P_post - P_step)
-    plt.colorbar()
-    plt.show()
-
+    print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
