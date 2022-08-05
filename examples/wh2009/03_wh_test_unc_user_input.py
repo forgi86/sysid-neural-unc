@@ -202,7 +202,7 @@ if __name__ == '__main__':
                      1000 * -3 * (unc_std + sigma_noise).ravel(),
                      alpha=0.3,
                      color='r')
-    ax[1].set_ylim([-50, 50])
+    ax[1].set_ylim([-100, 100])
     ax[1].grid()
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
