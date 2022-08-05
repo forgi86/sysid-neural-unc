@@ -51,7 +51,7 @@ if __name__ == '__main__':
     idx_fit_stop = idx_start + n_fit
     idx_val_start = idx_fit_stop
     idx_val_stop = idx_val_start + n_val
-    t_train, u_train, y_train = wh2009_loader("train", scale=False)
+    t_train, u_train, y_train = wh2009_loader("train", scale=False, dataset_name="WienerHammerSysMs.csv")
     t_fit, u_fit, y_fit = t_train[idx_fit_start:idx_fit_stop], u_train[idx_fit_start:idx_fit_stop], y_train[idx_fit_start:idx_fit_stop]
     t_val, u_val, y_val = t_train[idx_val_start:idx_val_stop] - t_train[idx_val_start], u_train[idx_val_start:idx_val_stop], y_train[idx_val_start:idx_val_stop]
 

@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from models import WHNet3, WHSys
 from torchid import metrics
 import control
+from common_input_signals import multisine
+
 
 if __name__ == '__main__':
 
@@ -22,13 +24,11 @@ if __name__ == '__main__':
     signal_num = 0  # signal used for test (nominal model trained on signal 0)
 
     # Extract data
-    y_meas = np.array(df_X[["yBenchMark"]], dtype=np.float32)  # batch, time, channel
-    u = np.array(df_X[["uBenchMark"]], dtype=np.float32)
-    u = u[:40_000, :]
-    y_meas = y_meas[:40_000, :]
+    u = 0.4 * multisine(10_000, 4, pmin=1, pmax=2_000, prule=lambda p: True)
+    u = u.reshape(-1, 1)
 
     fs = 51200
-    N = y_meas.size
+    N = u.size
     ts = 1/fs
     t = np.arange(N)*ts
     sigma_noise = 5e-3
@@ -56,16 +56,8 @@ if __name__ == '__main__':
     y_sim = y_sim_torch.numpy()[0, ...]
     y_sim_noise = y_sim + np.random.randn(*y_sim.shape) * sigma_noise
 
-    # In[Metrics]
-    R_sq = metrics.r_squared(y_meas, y_sim)[0]
-    rmse = 1000*metrics.rmse(y_meas, y_sim)[0]
-
-    print(f"R-squared metrics: {R_sq}")
-    print(f"RMSE metrics: {rmse} mV")
-
     # In[Plot]
     plt.figure()
-    plt.plot(t, y_meas, 'k', label="$y$")
     plt.plot(t, y_sim, 'b', label="$\hat y$")
     plt.plot(t, y_sim_noise, 'r', label="$\hat y$ noise")
     plt.legend()
@@ -131,7 +123,7 @@ if __name__ == '__main__':
                          "yBenchMark": y_sim_noise.ravel(),
                          "yBenchMarkClean": y_sim.ravel(), "fs": fs})
     df_X = df_X[["uBenchMark", "yBenchMark", "yBenchMarkClean", "fs"]]
-    df_X.to_csv(os.path.join("data", "WienerHammerSys.csv"), index=False)
+    df_X.to_csv(os.path.join("data", "WienerHammerSysMs.csv"), index=False)
 
 
 
