@@ -46,7 +46,7 @@ if __name__ == '__main__':
     dtype = torch.float64
     threads = 12  # max number of CPU threads
     beta_prior = 0.01  # precision (1/var) of the prior on theta
-    sigma_noise = 5e-6  # noise variance (could be learnt instead)
+    sigma_noise = 5e-3  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
@@ -64,29 +64,45 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    #N = 5000
-    #f = 100
-    #t_test = ts * np.arange(N).reshape(-1, 1)
-    #u_test = 0.5*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
+    # Sine test
+    N = 5_000
+
+    f = 3_000
+    t_test = ts * np.arange(N).reshape(-1, 1)
+    u_test = 1.0*np.sin(2*np.pi*f*t_test).reshape(-1, 1)
 
     # u_test = 0.5*multisine(1000, 5, pmin=500, pmax=1000, prule=lambda p: True)
     # u_test = 0.67*multisine(1000, 5, pmin=50, pmax=150, prule=lambda p: True)
     # u_test = 0.8 * multisine(1000, 5, pmin=1, pmax=50, prule=lambda p: True) #
 
-    T = 1_000
-    pmax = 50
-    fmax = pmax/T * fs
-    u_test = 0.4 * multisine(T, 5, pmin=1, pmax=pmax, prule=lambda p: True)
+    ## multisine tests ##
+    # T = 10_000
 
-    u_test = u_test.reshape(-1, 1)
-    N = u_test.shape[0]
+    #pmax = 500  # equivalent to training data
+    #a = 0.4  # equivalent to training
 
-    # Step
-    #N = 1000
+    #pmax = 2_000  # includes the transmission 0
+    #a = 0.4  # equivalent to training
+
+    #pmax = 500  # equivalent to training data
+    #a = 0.8
+
+    #pmax = 100  # much smaller than training data
+    #a = 0.4
+
+    #pmax = 500  # equivalent to training data
+    #a = 0.2   # smaller than training
+
+    #u_test = a * multisine(T, 1, pmin=1, pmax=pmax, prule=lambda p: True)
+    #fmax = pmax/T * fs
+
+    #u_test = u_test.reshape(-1, 1)
+    #N = u_test.shape[0]
+
+    # Step test
+    #N = 1_000
     #u_test = 0.5*np.ones((N, 1))
-
-
-    t_test = ts * np.arange(N).reshape(-1, 1)
+    #t_test = ts * np.arange(N).reshape(-1, 1)
 
     with torch.no_grad():
         u_torch = torch.tensor(u_test[None, ...], dtype=dtype)
@@ -175,7 +191,7 @@ if __name__ == '__main__':
     unc_var = unc_var.detach().numpy()
     unc_std = np.sqrt(unc_var).reshape(-1, 1)
     #%%
-    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
+    fig, ax = plt.subplots(4, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$y$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
@@ -186,26 +202,34 @@ if __name__ == '__main__':
                      color='c')
     ax[1].plot(t_test, 1000*(y_test - y_sim), 'r', label='e')
     ax[1].fill_between(t_test.ravel(),
-                     1000*3 * (unc_std + sigma_noise).ravel(),
-                     1000*-3 * (unc_std + sigma_noise).ravel(),
+                     1000 * 3 * (unc_std + sigma_noise).ravel(),
+                     1000 * -3 * (unc_std + sigma_noise).ravel(),
                      alpha=0.3,
                      color='r')
     ax[1].set_ylim([-50, 50])
     ax[1].grid()
     ax[0].legend(loc='upper right')
     ax[0].grid(True)
-    ax[0].set_xlabel(r"Time ($s$)")
-    ax[0].set_ylabel("Voltage (V)")
+    #ax[0].set_xlabel(r"Time ($s$)")
+    #ax[0].set_ylabel("Voltage (V)")
 
-    ax[2].plot(t_test, u, 'k', label='$v_{in}$')
+    ax[2].plot(t_test, u, 'k', label='$u$')
     ax[2].legend(loc='upper right')
     ax[2].grid(True)
     ax[2].set_xlabel(r"Time ($s$)")
     ax[2].set_ylabel("Voltage (V)")
 
+    ax[3].plot(t_test, unc_std / (np.abs(y_sim) + 1e-2))
     #%%
     e_rms = 1000 * metrics.rmse(y_test, y_sim)[0]
     fit_idx = metrics.fit_index(y_test, y_sim)[0]
     r_sq = metrics.r_squared(y_test, y_sim)[0]
 
     print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
+
+    #%%
+    plt.figure()
+    plt.plot(t_test, unc_std/(np.abs(y_sim)+1e-3))
+
+    surprise = 100*np.mean(np.abs(unc_std)) / np.mean(np.abs(y_sim))
+    print(f"surprise: {surprise:.5f}")

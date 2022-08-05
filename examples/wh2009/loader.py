@@ -11,7 +11,7 @@ COL_Y = ['yBenchMark']
 idx_train = 20000
 
 
-def wh2009_loader(dataset, scale=True, dtype=np.float32, dataset_name="WienerHammerSys.csv"):
+def wh2009_loader(dataset, scale=True, dtype=np.float32, dataset_name="WienerHammerSysMs.csv"):
     df_data = pd.read_csv(os.path.join("data", dataset_name))
     y = np.array(df_data[COL_Y], dtype=dtype)
     u = np.array(df_data[COL_U], dtype=dtype)
