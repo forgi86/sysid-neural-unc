@@ -224,5 +224,14 @@ if __name__ == '__main__':
     print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
 
     #%%
-    surprise = 100*np.mean(np.abs(unc_std)) / np.mean(np.abs(y_sim))
+    def rms(sig, time_axis=0):
+        return np.sqrt(np.mean(sig ** 2, axis=time_axis))
+
+    def mabs(sig, time_axis=0):
+        return np.mean(np.abs(sig), axis=time_axis)
+
+    #surprise = (100*rms(unc_std) / rms(y_sim))[0]
+    surprise = (100*mabs(unc_std) / mabs(y_sim))[0]
     print(f"surprise: {surprise:.5f}")
+
+

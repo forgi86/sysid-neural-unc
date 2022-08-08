@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     # Load dataset
     # %% Load dataset
-    t_test, u_test, y_test = wh2009_loader("test", scale=False, dataset_name="WienerHammerSys.csv")
-    #t_test, u_test, y_test = wh2009_loader("full", scale=False, dataset_name="WienerHammerSysRamp.csv")
+    #t_test, u_test, y_test = wh2009_loader("test", scale=False, dataset_name="WienerHammerSys.csv")
+    t_test, u_test, y_test = wh2009_loader("full", scale=False, dataset_name="WienerHammerSysRamp.csv")
 
     # t_val, u_val, y_val = t_train[n_fit:] - t_train[n_fit], u_train[n_fit:], y_train[n_fit:]
     N = t_test.shape[0]
