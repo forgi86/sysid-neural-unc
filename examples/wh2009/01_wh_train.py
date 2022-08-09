@@ -26,6 +26,7 @@ if __name__ == '__main__':
     est_hidden_size = 15
     hidden_size = 15
     lr = 1e-3
+    n_skip = 64
 
     no_cuda = False
     log_interval = 20
@@ -159,7 +160,7 @@ if __name__ == '__main__':
                              device=u_val_t.device)
             # x0 = state_estimator(u_val_t, y_val_t)
             y_val_sim = model(x0, u_val_t)
-            val_loss = torch.nn.functional.mse_loss(y_val_t, y_val_sim)
+            val_loss = torch.nn.functional.mse_loss(y_val_t[n_skip:, :, :], y_val_sim[n_skip:, :, :])
 
         VAL_LOSS.append(val_loss.item())
         print(f'==== Epoch {epoch} | Train Loss {train_loss:.4f} Val (sim) Loss {val_loss:.4f} ====')

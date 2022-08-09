@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import scipy
 import torch
 import matplotlib
 matplotlib.use("TKAgg")
@@ -14,6 +15,8 @@ from torchid import metrics
 
 # Truncated simulation error minimization method
 if __name__ == '__main__':
+
+    np.random.seed(42)
 
     model_filename = "model.pt"
     model_data = torch.load(os.path.join("models", model_filename))
@@ -41,6 +44,7 @@ if __name__ == '__main__':
     seq_est_len = 40
     est_hidden_size = 15
     hidden_size = 15
+    n_skip = 64
 
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
@@ -57,44 +61,70 @@ if __name__ == '__main__':
     device = torch.device("cuda" if use_cuda else "cpu")
     torch.set_num_threads(threads)
 
-    # Load dataset
-    # %% Load dataset
+    # %% Generate dataset
     fs = 51200
     ts = 1/fs
 
     sys = WHSys()
 
-    ## Sine test ##
-    #N = 5_000
-    #f = 3_000
-    #u_test = 1.0*np.sin(2*np.pi*f*t_test)
+    SIGNAL = "CHIRP"
 
+    ## Sine test ##
+    if SIGNAL == "SINE":
+        N = 5_000
+        f = 3_000
+        t_test = ts * np.arange(N).reshape(-1, 1)
+        u_test = 1.0*np.sin(2*np.pi*f*t_test)
 
     ## multisine tests ##
-    N = 5_000
+    elif SIGNAL == "MULTISINE_1":  # RMSE = 5.6, FIT=98.1, surprise=0.35
+        N = 5_000
+        fmax = 2000  # equivalent to training data
+        a = 0.4  # equivalent to training
+        pmax = int(N*fmax/fs)
+        u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
 
-    fmax = 2000  # equivalent to training data
-    a = 0.4  # equivalent to training
+    elif SIGNAL == "MULTISINE_2":  # RMSE = 32.5, FIT=93.9, surprise=2.10
+        N = 5_000
+        fmax = 2_000  # equivalent to training data
+        a = 0.8  # double training
+        pmax = int(N*fmax/fs)
+        u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
 
-    #fmax = 10_000  # includes the transmission 0
-    #a = 0.4  # equivalent to training
+    elif SIGNAL == "MULTISINE_3":  # RMSE = 16.8, FIT=87.8, surprise=4.03
+        N = 5_000
+        fmin = 0
+        fmax = 10_000
+        a = 0.4  # equivalent to training
+        pmax = int(N*fmax/fs)
+        pmin = int(N * fmin / fs)
+        pmin = max(pmin, 1)
+        u_test = a * multisine(N, 1, pmin=pmin, pmax=pmax, prule=lambda p: True)
 
-    #fmax = 2000  # equivalent to training data
-    #a = 0.8
+    elif SIGNAL == "MULTISINE_4":  # RMSE = 5.9, FIT=97.7, surprise=0.43
+        N = 5_000
+        fmin = 1_000
+        fmax = 2_000
+        a = 0.4  # equivalent to training
+        pmax = int(N*fmax/fs)
+        pmin = int(N * fmin / fs)
+        pmin = max(pmin, 1)
+        u_test = a * multisine(N, 1, pmin=pmin, pmax=pmax, prule=lambda p: True)
 
-    #pmax = 100  # much smaller than training data
-    #a = 0.4
+    elif SIGNAL == "RAMP":  # RMSE = 63.8, FIT=89.6, surprise=6.04
+        N = 10_000
+        fmax = 2000  # equivalent to training data
+        a = 0.4  # equivalent to training
+        pmax = int(N*fmax/fs)
+        u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
+        u_test = u_test * np.linspace(0, 4, N)
 
-    #pmax = 500  # equivalent to training data
-    #a = 0.2   # smaller than training
-
-    pmax = int(N*fmax/fs)
-    u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
-
-
-    # Step test
-    #N = 500
-    #u_test = 1.2*np.ones((N, 1))
+    elif SIGNAL == "CHIRP":  # RMSE = 14.8, FIT=87.7, surprise=3.63
+        N = 10_000
+        f_max = 10_000
+        f_min = 0
+        t_test = ts * np.arange(N).reshape(-1, 1)
+        u_test = 0.5*scipy.signal.chirp(t_test, f_min, t_test[-1], f_max, method='linear', phi=0, vertex_zero=True)
 
     # for all signals
     t_test = ts * np.arange(N).reshape(-1, 1)
@@ -187,7 +217,7 @@ if __name__ == '__main__':
     unc_var = unc_var.detach().numpy()
     unc_std = np.sqrt(unc_var).reshape(-1, 1)
     #%%
-    fig, ax = plt.subplots(4, 1, sharex=True, figsize=(6, 5.5))
+    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$y$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
@@ -196,30 +226,52 @@ if __name__ == '__main__':
                      (y_sim - 3 * (unc_std + sigma_noise)).ravel(),
                      alpha=0.3,
                      color='c')
-    ax[1].plot(t_test, 1000*(y_test - y_sim), 'r', label='e')
-    ax[1].fill_between(t_test.ravel(),
-                     1000 * 3 * (unc_std + sigma_noise).ravel(),
-                     1000 * -3 * (unc_std + sigma_noise).ravel(),
-                     alpha=0.3,
-                     color='r')
-    ax[1].set_ylim([-100, 100])
-    ax[1].grid()
-    ax[0].legend(loc='upper right')
     ax[0].grid(True)
+    ax[0].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
+    factor = 1000
+    ax[1].plot(t_test, factor*(y_test - y_sim), 'r', alpha=0.7, label='$e$')
+    ax[1].axhline(factor * 3 * sigma_noise, color="k", label="$3 \sigma_e$")
+    ax[1].axhline(factor * -3 * sigma_noise, color="k", label="$-3 \sigma_e$")
+    ax[1].fill_between(t_test.ravel(),
+                     factor * 3 * (unc_std + sigma_noise).ravel(),
+                     factor * -3 * (unc_std + sigma_noise).ravel(),
+                     alpha=0.3,
+                     color='r', label="95% C.I.")
+
+    #ax[1].set_ylim(np.array([-0.01, 0.01])*factor)
+    ax[1].grid()
+    ax[1].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
+
     #ax[0].set_xlabel(r"Time ($s$)")
     #ax[0].set_ylabel("Voltage (V)")
 
     ax[2].plot(t_test, u, 'k', label='$u$')
-    ax[2].legend(loc='upper right')
+    ax[2].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0), )
+    # ax[2].legend(loc='upper right')
     ax[2].grid(True)
     ax[2].set_xlabel(r"Time ($s$)")
     ax[2].set_ylabel("Voltage (V)")
 
-    ax[3].plot(t_test, unc_std / (np.abs(y_sim) + 1e-2))
+    if SIGNAL in ["MULTISINE_1", "MULTISINE_2", "MULTISINE_3", "MULTISINE_4"]:
+        ax[2].set_xlim([0.04, 0.06])  # for MS_2
+        ax[2].set_xticks([0.04, 0.045, 0.05, 0.055, 0.06])
+    else:
+        ax[2].set_xlim([t_test[n_skip], t_test[-1]])
+
+    ax[1].set_ylim([-200, 200])  # for MS_2
+    #ax[2].set_xlim([t_test[1000], t_test[1500]])
+
+    plt.tight_layout()
+    plt.savefig(f"{SIGNAL}.pdf")
+    #ax[3].plot(t_test, unc_std / (np.abs(y_sim) + 1e-2))
     #%%
-    e_rms = 1000 * metrics.rmse(y_test, y_sim)[0]
-    fit_idx = metrics.fit_index(y_test, y_sim)[0]
-    r_sq = metrics.r_squared(y_test, y_sim)[0]
+
+    y_metrics = y_test[n_skip:]
+    y_sim_metrics = y_sim[n_skip:]
+
+    e_rms = factor * metrics.rmse(y_metrics, y_sim_metrics)[0]
+    fit_idx = metrics.fit_index(y_metrics, y_sim_metrics)[0]
+    r_sq = metrics.r_squared(y_metrics, y_sim_metrics)[0]
 
     print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
 
