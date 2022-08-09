@@ -66,8 +66,12 @@ if __name__ == '__main__':
 
     #%% Metrics
 
-    e_rms = 1000 * metrics.rmse(y, y_sim)[0]
-    fit_idx = metrics.fit_index(y, y_sim)[0]
-    r_sq = metrics.r_squared(y, y_sim)[0]
+    n_skip = 64
+    y_metrics = y[n_skip:]
+    y_sim_metrics = y_sim[n_skip:]
+
+    e_rms = 1000 * metrics.rmse(y_metrics, y_sim_metrics)[0]
+    fit_idx = metrics.fit_index(y_metrics, y_sim_metrics)[0]
+    r_sq = metrics.r_squared(y_metrics, y_sim_metrics)[0]
 
     print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")

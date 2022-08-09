@@ -29,7 +29,7 @@ if __name__ == '__main__':
     b2, a2 = scipy.signal.cheby2(N=3, rs=40, Wn=5e3, btype='low', analog=False, output='ba', fs=fs)
     G2 = control.TransferFunction(b2, a2, ts)
     control.bode(G2, omega_limits=[1e2, 1e5], Hz=True, label="$G_2(z)$", wrap_phase=False, dB=True)
-    plt.legend()\
+    plt.legend()
     plt.tight_layout()
     plt.savefig("wh_bode.pdf")
 
