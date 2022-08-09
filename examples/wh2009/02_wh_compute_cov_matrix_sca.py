@@ -36,12 +36,12 @@ if __name__ == '__main__':
     no_cuda = True  # no GPU, CPU only training
     dtype = torch.float64
     threads = 6  # max number of CPU threads
-    beta_prior = 0.01  # precision (1/var) of the prior on theta
+    tau_prior = 0.1  # precision (1/var) of the prior on theta
     sigma_noise = 5e-3  # noise variance (could be learnt instead)
 
     var_noise = sigma_noise**2
     beta_noise = 1/var_noise
-    var_prior = 1/beta_prior
+    var_prior = 1 / tau_prior
 
     # CPU/GPU resources
     use_cuda = not no_cuda and torch.cuda.is_available()
@@ -79,8 +79,8 @@ if __name__ == '__main__':
     # scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(1/N)
 
     # negative Hessian of the log-prior
-    H_prior = torch.eye(n_param, dtype=dtype) * beta_prior * scaling_H
-    P_prior = torch.eye(n_param, dtype=dtype) / beta_prior * scaling_P
+    H_prior = torch.eye(n_param, dtype=dtype) * tau_prior * scaling_H
+    P_prior = torch.eye(n_param, dtype=dtype) / tau_prior * scaling_P
     P_step = P_prior  # prior parameter covariance
     H_step = torch.zeros((n_param, n_param), dtype=dtype)
     #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance

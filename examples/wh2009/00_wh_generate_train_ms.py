@@ -1,6 +1,6 @@
 import os
-import matplotlib
-matplotlib.use("TKAgg")
+import matplotlib as mpl
+mpl.use("TKAgg")
 import torch
 import pandas as pd
 import numpy as np
@@ -12,20 +12,22 @@ from common_input_signals import multisine
 
 if __name__ == '__main__':
 
+    font = {'size': 14,
+            'family': 'serif'}
+    mpl.rc('font', **font)
+
     torch.manual_seed(42)
     np.random.seed(42)
 
-    matplotlib.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+    #mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
     model_name = "model_WH3"
-
-    # Load dataset
 
     # Generate data
     fs = 51200
     T = 40_000
-    #pmax = 2000
-    #fmax = pmax/T * fs
     fmax = 2000
+    sigma_noise = 5e-3
+
     pmax = int(T*fmax/fs)
     u = 0.4 * multisine(T, 1, pmin=1, pmax=pmax, prule=lambda p: True)
     u = u.reshape(-1, 1)
@@ -33,7 +35,7 @@ if __name__ == '__main__':
     N = u.size
     ts = 1/fs
     t = np.arange(N)*ts
-    sigma_noise = 5e-3
+
 
     # Prepare data
     u_torch = torch.tensor(u[None, ...], dtype=torch.float, requires_grad=False)
@@ -100,7 +102,7 @@ if __name__ == '__main__':
     y1_lin_min = -5.0  #np.min(y1_lin)
     y1_lin_max = 5.0  # np.max(y1_lin)
 
-    in_nl = np.arange(y1_lin_min, y1_lin_max, (y1_lin_max- y1_lin_min)/1000).astype(np.float32).reshape(-1, 1)
+    in_nl = np.arange(y1_lin_min, y1_lin_max, (y1_lin_max - y1_lin_min)/1000).astype(np.float32).reshape(-1, 1)
 
     #%%
     with torch.no_grad():
@@ -111,13 +113,15 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(in_nl, out_nl, 'b')
-    plt.plot(y_lin.squeeze(), y_nl.squeeze(), '*')
+    plt.plot(y_lin.squeeze(), y_nl.squeeze(), '+')
     plt.plot(in_nl, out_nl_approx, 'r')
     plt.xlabel('Static non-linearity input (-)')
     plt.ylabel('Static non-linearity output (-)')
-    plt.xlim([-3, 3])
-    plt.ylim([-3, 3])
+    plt.xlim([-2, 3])
+    plt.ylim([-2, 1])
     plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("wh_static.pdf")
 
     #%%
 

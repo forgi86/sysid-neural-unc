@@ -40,11 +40,19 @@ if __name__ == '__main__':
     n_x = 6
     n_u = 1
     n_y = 1
-    idx_start = 0 #5000
+    idx_start = 0  #5000
     n_fit = 10_000
     n_val = 5_000
 
     epochs = epochs_adam + epochs_bfgs
+
+    tau_prior = 0.1  # precision (1/var) of the prior on theta
+    sigma_noise = 5e-3  # noise variance (could be learnt instead)
+
+    # %%
+    var_noise = sigma_noise**2
+    beta_noise = 1/var_noise
+    lambda_reg = tau_prior/beta_noise
 
     # %% Load dataset
     idx_fit_start = idx_start
@@ -69,7 +77,7 @@ if __name__ == '__main__':
                                                      seq_len=seq_est_len).to(device)
 
     # Setup optimizer
-    optimizer = optim.Adam(list(model.parameters())+list(estimator.parameters()), lr=lr)
+    optimizer = optim.Adam(list(model.parameters())+list(estimator.parameters()), lr=lr, weight_decay=lambda_reg)
 
     optimizer_LBFGS = torch.optim.LBFGS(
         list(model.parameters())+list(estimator.parameters()),
