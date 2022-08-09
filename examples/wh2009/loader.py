@@ -8,7 +8,7 @@ matplotlib.use("TKAgg")
 COL_F = ['fs']
 COL_U = ['uBenchMark']
 COL_Y = ['yBenchMark']
-idx_train = 20000
+idx_train = 20_000
 
 
 def wh2009_loader(dataset, scale=True, dtype=np.float32, dataset_name="WienerHammerSysMs.csv"):

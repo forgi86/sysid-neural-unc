@@ -1,0 +1,81 @@
+import os
+import torch
+import torch.nn as nn
+import torchid.ss.dt.models as models
+from torchid.ss.dt.simulator import StateSpaceSimulator
+from torchid.ss.dt.estimators import FeedForwardStateEstimator
+from loader import wh2009_loader, wh2009_scaling
+import matplotlib
+import matplotlib.pyplot as plt
+from torchid import metrics
+
+
+if __name__ == '__main__':
+
+    matplotlib.rc('font', **{'size': 14, 'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+
+    model_data = torch.load(os.path.join("models", "model.pt"), map_location=torch.device('cpu'))  # best
+
+    n_x = 6
+    n_y = 1
+    n_u = 1
+    hidden_size = 15
+    est_hidden_size = 15
+    seq_est_len = 40
+
+    # Load dataset
+    t, u, y = wh2009_loader("test", dataset_name="WienerHammerSysMs.csv", scale=False)
+    y_mean, y_std = wh2009_scaling()
+
+    #%% Load models and parameters
+    f_xu = models.NeuralLinStateUpdate(n_x, n_u, hidden_sizes=[hidden_size], hidden_acts=[nn.Tanh()])
+    g_x = models.NeuralLinOutput(n_x, n_u, hidden_size=hidden_size)  #LinearOutput(n_x, n_y)
+    model = StateSpaceSimulator(f_xu, g_x)
+    estimator = FeedForwardStateEstimator(n_u=n_y, n_y=n_y, n_x=n_x,
+                                                     hidden_size=est_hidden_size,
+                                                     seq_len=seq_est_len)
+    model.load_state_dict(model_data["model"])
+    estimator.load_state_dict(model_data["estimator"])
+
+    #%% Simulate
+    with torch.no_grad():
+        u_v = torch.tensor(u[:, None, :])
+        y_v = torch.tensor(y[:, None, :])
+        x0 = estimator(u_v[:seq_est_len, :, :], y_v[:seq_est_len, :, :])
+        # initial state here set to 0 for simplicity. The effect on the long simulation is negligible
+        #x0 = torch.zeros((1, n_x), dtype=u_v.dtype, device=u_v.device)
+
+        y_sim = model(x0, u_v[seq_est_len:, :, :]).squeeze(1)  # remove batch dimension
+        y_sim = torch.cat([torch.full((seq_est_len, n_y), torch.nan), y_sim])
+    y_sim = y_sim.detach().numpy()
+
+    #y = y*y_std + y_mean
+    #y_sim = y_sim*y_std + y_mean
+
+    #%% Test
+    fig, ax = plt.subplots(1, 1, sharex=True)
+    ax.plot(y[:, 0], 'k', label='$y$')
+    ax.grid(True)
+    ax.plot(y_sim[:, 0], 'b', label=r'$y^{\rm sim}$')
+    ax.plot(y[:, 0] - y_sim[:, 0], 'r', label=r'$y-y^{\rm sim}$')
+    #ax.set_xlim([40000, 41000])
+    ax.set_ylim([-1.2, 1.2])
+    ax.set_xlabel("Sample index (-)")
+    ax.set_ylabel("Normalized output (-)")
+    ax.legend(loc="upper right")#bbox_to_anchor=(0.9, 1.3), frameon=True)
+    plt.savefig("wh_best_timetrace.pdf")
+
+    #%%
+    #plt.figure()
+    #plt.plot(model_data["TRAIN_LOSS"], 'b')
+    #plt.plot(model_data["VAL_LOSS"], 'r')
+
+    #%% Metrics
+
+    y_metrics = y[seq_est_len:]
+    y_sim_metrics = y_sim[seq_est_len:]
+    e_rms = 1000 * metrics.rmse(y_metrics, y_sim_metrics)[0]
+    fit_idx = metrics.fit_index(y_metrics, y_sim_metrics)[0]
+    r_sq = metrics.r_squared(y_metrics, y_sim_metrics)[0]
+
+    print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
