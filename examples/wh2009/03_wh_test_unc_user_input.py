@@ -67,7 +67,9 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "CHIRP"
+    SIGNAL = "MULTISINE_4"
+    #SIGNAL = "CHIRP"
+
 
     ## Sine test ##
     if SIGNAL == "SINE":
@@ -77,34 +79,34 @@ if __name__ == '__main__':
         u_test = 1.0*np.sin(2*np.pi*f*t_test)
 
     ## multisine tests ##
-    elif SIGNAL == "MULTISINE_1":  # RMSE = 5.6, FIT=98.1, surprise=0.35
+    elif SIGNAL == "MULTISINE_1":  # RMSE = 5.6, FIT=98.1, surprise=0.34
         N = 5_000
         fmax = 2000  # equivalent to training data
         a = 0.4  # equivalent to training
         pmax = int(N*fmax/fs)
         u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
 
-    elif SIGNAL == "MULTISINE_2":  # RMSE = 32.5, FIT=93.9, surprise=2.10
+    elif SIGNAL == "MULTISINE_2":  # RMSE = 5.9, FIT=97.7, surprise=0.43
         N = 5_000
-        fmax = 2_000  # equivalent to training data
-        a = 0.8  # double training
-        pmax = int(N*fmax/fs)
-        u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
-
-    elif SIGNAL == "MULTISINE_3":  # RMSE = 16.8, FIT=87.8, surprise=4.03
-        N = 5_000
-        fmin = 0
-        fmax = 10_000
+        fmin = 1_000
+        fmax = 2_000
         a = 0.4  # equivalent to training
         pmax = int(N*fmax/fs)
         pmin = int(N * fmin / fs)
         pmin = max(pmin, 1)
         u_test = a * multisine(N, 1, pmin=pmin, pmax=pmax, prule=lambda p: True)
 
-    elif SIGNAL == "MULTISINE_4":  # RMSE = 5.9, FIT=97.7, surprise=0.43
+    elif SIGNAL == "MULTISINE_3":  # RMSE = 32.5, FIT=93.9, surprise=2.10
         N = 5_000
-        fmin = 1_000
-        fmax = 2_000
+        fmax = 2_000  # equivalent to training data
+        a = 0.8  # double training
+        pmax = int(N*fmax/fs)
+        u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
+
+    elif SIGNAL == "MULTISINE_4":  # RMSE = 16.8, FIT=87.8, surprise=4.03
+        N = 5_000
+        fmin = 0
+        fmax = 10_000
         a = 0.4  # equivalent to training
         pmax = int(N*fmax/fs)
         pmin = int(N * fmin / fs)
@@ -216,16 +218,19 @@ if __name__ == '__main__':
     y_sim = y_sim.detach().numpy()
     unc_var = unc_var.detach().numpy()
     unc_std = np.sqrt(unc_var).reshape(-1, 1)
+
+    ppd_var = unc_var + var_noise
+    ppd_std = np.sqrt(ppd_var)
     #%%
     fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$y$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
     ax[0].fill_between(t_test.ravel(),
-                     (y_sim + 3 * (unc_std + sigma_noise)).ravel(),
-                     (y_sim - 3 * (unc_std + sigma_noise)).ravel(),
+                     (y_sim + 3 * ppd_std).ravel(),
+                     (y_sim - 3 * ppd_std).ravel(),
                      alpha=0.3,
-                     color='c')
+                     color='c', label="95% C.I.")
     ax[0].grid(True)
     ax[0].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
     factor = 1000
@@ -233,8 +238,8 @@ if __name__ == '__main__':
     ax[1].axhline(factor * 3 * sigma_noise, color="k", label="$3 \sigma_e$")
     ax[1].axhline(factor * -3 * sigma_noise, color="k", label="$-3 \sigma_e$")
     ax[1].fill_between(t_test.ravel(),
-                     factor * 3 * (unc_std + sigma_noise).ravel(),
-                     factor * -3 * (unc_std + sigma_noise).ravel(),
+                     factor * 3 * ppd_std.ravel(),
+                     factor * -3 * ppd_std.ravel(),
                      alpha=0.3,
                      color='r', label="95% C.I.")
 
