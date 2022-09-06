@@ -224,8 +224,8 @@ if __name__ == '__main__':
     #%%
     fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
-    ax[0].plot(t_test, y_test, 'k', label='$y$')
-    ax[0].plot(t_test, y_sim, 'b', label='$\hat y$')
+    ax[0].plot(t_test, y_test, 'k', label='$\mathbf{y}^*$')
+    ax[0].plot(t_test, y_sim, 'b', label='$\mathbf{y}^{o,*}$')
     ax[0].fill_between(t_test.ravel(),
                      (y_sim + 3 * ppd_std).ravel(),
                      (y_sim - 3 * ppd_std).ravel(),
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     ax[0].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
     factor = 1000
     ax[1].plot(t_test, factor*(y_test - y_sim), 'r', alpha=0.7, label='$e$')
-    ax[1].axhline(factor * 3 * sigma_noise, color="k", label="$3 \sigma_e$")
+    ax[1].axhline(factor * 3 * sigma_noise, color="k", label="$+3 \sigma_e$")
     ax[1].axhline(factor * -3 * sigma_noise, color="k", label="$-3 \sigma_e$")
     ax[1].fill_between(t_test.ravel(),
                      factor * 3 * ppd_std.ravel(),
