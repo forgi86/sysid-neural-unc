@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "MULTISINE_4"
+    SIGNAL = "MULTISINE_2"
     #SIGNAL = "CHIRP"
 
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
                      (y_sim + 3 * ppd_std).ravel(),
                      (y_sim - 3 * ppd_std).ravel(),
                      alpha=0.3,
-                     color='c', label="95% C.I.")
+                     color='c', label="99% C.I.")
     ax[0].grid(True)
     ax[0].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
     factor = 1000
@@ -241,7 +241,7 @@ if __name__ == '__main__':
                      factor * 3 * ppd_std.ravel(),
                      factor * -3 * ppd_std.ravel(),
                      alpha=0.3,
-                     color='r', label="95% C.I.")
+                     color='r', label="99% C.I.")
 
     #ax[1].set_ylim(np.array([-0.01, 0.01])*factor)
     ax[1].grid()
@@ -255,6 +255,9 @@ if __name__ == '__main__':
     # ax[2].legend(loc='upper right')
     ax[2].grid(True)
     ax[2].set_xlabel(r"Time ($s$)")
+
+    ax[0].set_ylabel("Voltage (V)")
+    ax[1].set_ylabel("Voltage (mV)")
     ax[2].set_ylabel("Voltage (V)")
 
     if SIGNAL in ["MULTISINE_1", "MULTISINE_2", "MULTISINE_3", "MULTISINE_4"]:
@@ -263,7 +266,12 @@ if __name__ == '__main__':
     else:
         ax[2].set_xlim([t_test[n_skip], t_test[-1]])
 
-    ax[1].set_ylim([-200, 200])  # for MS_2
+    if SIGNAL == "MULTISINE_3":
+        ax[1].set_ylim([-650, 650])  # for MS_2
+        ax[1].set_yticks([-600, -400, -200, 0,
+                          200,  400,  600])
+    else:
+        ax[1].set_ylim([-70, 70])  # for MS_2
     #ax[2].set_xlim([t_test[1000], t_test[1500]])
 
     plt.tight_layout()
