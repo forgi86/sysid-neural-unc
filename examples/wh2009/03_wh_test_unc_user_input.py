@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "MULTISINE_2"
+    SIGNAL = "MULTISINE_1"
     #SIGNAL = "CHIRP"
 
 
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$\mathbf{y}^*$')
-    ax[0].plot(t_test, y_sim, 'b', label='$\mathbf{y}^{o,*}$')
+    ax[0].plot(t_test, y_sim, 'b', label='$\hat{\mathbf{y}}^*$')
     ax[0].fill_between(t_test.ravel(),
                      (y_sim + 3 * ppd_std).ravel(),
                      (y_sim - 3 * ppd_std).ravel(),
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     ax[0].grid(True)
     ax[0].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
     factor = 1000
-    ax[1].plot(t_test, factor*(y_test - y_sim), 'r', alpha=0.7, label='$e$')
+    ax[1].plot(t_test, factor*(y_test - y_sim), 'r', alpha=0.7, label='$\mathbf{e}$')
     ax[1].axhline(factor * 3 * sigma_noise, color="k", label="$+3 \sigma_e$")
     ax[1].axhline(factor * -3 * sigma_noise, color="k", label="$-3 \sigma_e$")
     ax[1].fill_between(t_test.ravel(),
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     #ax[0].set_xlabel(r"Time ($s$)")
     #ax[0].set_ylabel("Voltage (V)")
 
-    ax[2].plot(t_test, u, 'k', label='$u$')
+    ax[2].plot(t_test, u, 'k', label='$\mathbf{u}$')
     ax[2].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0), )
     # ax[2].legend(loc='upper right')
     ax[2].grid(True)
