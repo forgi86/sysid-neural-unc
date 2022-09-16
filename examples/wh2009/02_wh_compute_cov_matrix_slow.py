@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 import torch
 import matplotlib
@@ -8,9 +9,10 @@ import torchid.ss.dt.models as models
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from loader import wh2009_loader
 import matplotlib.pyplot as plt
+from diffutils import parameter_jacobian
+import functorch
 
 
-# Truncated simulation error minimization method
 if __name__ == '__main__':
 
     model_filename = "model.pt"
@@ -30,7 +32,7 @@ if __name__ == '__main__':
     est_hidden_size = 15
     hidden_size = 15
     idx_start = 0 #5000
-    n_fit = 10_000
+    n_fit = 10_000//2
     n_val = 5_000
 
     no_cuda = True  # no GPU, CPU only training
@@ -68,166 +70,43 @@ if __name__ == '__main__':
     n_fparam = sum(map(torch.numel, f_xu.parameters()))
     n_gparam = sum(map(torch.numel, g_x.parameters()))
 
-    # Evaluate the model in open-loop simulation against validation data
+    u_v = torch.tensor(u_fit[:, None, :], dtype=dtype)
+    y_v = torch.tensor(y_fit[:, None, :], dtype=dtype)
 
-    u = torch.from_numpy(u_fit)
-    x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
-    s_step = torch.zeros(n_x, n_fparam, dtype=dtype)
+    x_0 = torch.zeros((1, n_x), dtype=dtype, device=u_v.device)
+    # x_0 = state_estimator(u_val_t, y_val_t)
+    y_sim = model(x_0, u_v)
 
-    scaling_H = 1/(N * beta_noise)
-    scaling_P = 1/scaling_H
-    # scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(1/N)
+    loss = torch.mean((y_sim - y_v)**2)
 
-    # negative Hessian of the log-prior
-    H_prior = torch.eye(n_param, dtype=dtype) * tau_prior * scaling_H
-    P_prior = torch.eye(n_param, dtype=dtype) / tau_prior * scaling_P
-    P_step = P_prior  # prior parameter covariance
-    H_step = torch.zeros((n_param, n_param), dtype=dtype)
-    #H_step = torch.eye(n_param) * beta_prior/scaling_H  # prior inverse parameter covariance
+    # Exact Hessian computation
+    func_model, params = functorch.make_functional(model)
 
-    x_sim = []
-    y_sim = []
-    J_rows = []
+    # Naive jacobian computation
+    time_jac_start = time.time()
+    jac_fun = functorch.jacrev(func_model, 0)
+    jacs = jac_fun(params, x_0, u_v)
+    jacs_2d = [jac.reshape(N, -1) for jac in jacs]
+    J = torch.cat(jacs_2d, dim=-1)
 
-    for time_idx in range(N):
-        # print(time_idx)
+    #J = parameter_jacobian(model, x_0, u_v, vectorize=True, flatten=True)
+    time_jac = time.time() - time_jac_start
+    print(f"Jacobian computation time: {time_jac:.2f} s")
 
-        # Current input
-        u_step = u[time_idx, :]
+    def loss_fun(*model_params):
+        y_sim = func_model(model_params, x_0, u_v)
+        loss = torch.mean((y_sim - y_v) ** 2)
+        return loss
 
-        # Current state and current output sensitivity
-        x_sim.append(x_step)
-        y_step = g_x(x_step)
-        y_sim.append(y_step)
+    time_hess_start = time.time()
+    H = torch.autograd.functional.hessian(loss_fun, params, vectorize=True)
+    time_hess = time.time() - time_hess_start
+    print(f"Hessian computation time: {time_hess:.2f} s")
 
-        # Jacobian of y wrt x
-        basis_y = torch.eye(n_y).unbind()
-        jacs_gx = [torch.autograd.grad(y_step, x_step, v, retain_graph=True)[0] for v in basis_y]
-        J_gx = torch.stack(jacs_gx, dim=0)
-
-        # Jacobian of y wrt theta
-        jacs_gtheta = [torch.autograd.grad(y_step, g_x.parameters(), v, retain_graph=True) for v in basis_y]
-        jacs_gtheta_f = [torch.cat([jac.ravel() for jac in jacs_gtheta[j]]) for j in range(n_y)]  # ravel jacobian rows
-        J_gtheta = torch.stack(jacs_gtheta_f)  # stack jacobian rows to obtain a jacobian matrix
-
-        # Eq. 14a in the paper (special case, f and g independently parameterized)
-        phi_step_1 = J_gx @ s_step
-        phi_step_2 = J_gtheta
-        phi_step = torch.cat((phi_step_1, phi_step_2), axis=-1).t()
-
-        J_rows.append(phi_step.t())
-        H_step = H_step + phi_step @ phi_step.t() * 1/N
-
-        den = 1 + phi_step.t() @ P_step @ phi_step
-        P_tmp = - (P_step @ phi_step @ phi_step.t() @ P_step)/den
-        P_step = P_step + P_tmp
-
-        # Current x
-        # System update
-        delta_x = 1.0 * f_xu(x_step, u_step)
-        basis_x = torch.eye(n_x).unbind()
-
-        # Jacobian of delta_x wrt x
-        jacs_fx = [torch.autograd.grad(delta_x, x_step, v, retain_graph=True)[0] for v in basis_x]
-        J_fx = torch.stack(jacs_fx, dim=0)
-
-        # Jacobian of delta_x wrt theta
-        jacs_ftheta = [torch.autograd.grad(delta_x, f_xu.parameters(), v, retain_graph=True) for v in basis_x]
-        jacs_ftheta_f = [torch.cat([jac.ravel() for jac in jacs_ftheta[j]]) for j in range(n_x)]  # ravel jacobian rows
-        J_ftheta = torch.stack(jacs_ftheta_f)  # stack jacobian rows to obtain a jacobian matrix
-
-        x_step = (x_step + delta_x).detach().requires_grad_(True)
-
-        s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14a in the paper
-
-    J = torch.cat(J_rows).squeeze(-1)
-    x_sim = torch.stack(x_sim)
-    y_sim = torch.stack(y_sim)
-
-    # information matrix (or approximate negative Hessian of the log-likelihood)
-    H_post = H_prior + H_step
-    P_post = torch.linalg.pinv(H_post)
-    #P_step = P_step.numpy()
-    #H_step = H_step.numpy()
-
-    torch.save({
-        "H_prior": H_prior/scaling_H,
-        "H_post": H_post/scaling_H,
-        "P_post": P_post/scaling_P,
-        "scaling_P": scaling_P,
-        "scaling_H": scaling_H,
-    }, os.path.join("models", "covariance.pt"))
-
-    #%%
-    P_y = J @ (P_post/scaling_P) @ J.t()
-    W, V = np.linalg.eig(H_post)
-    #plt.plot(W.real, W.imag, "*")
-
-    #%%
-    y_sim = y_sim.detach().numpy()
-
-    #%%
-    fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
-
-    ax[0].plot(t_fit, y_fit, 'k',  label='$y$')
-    ax[0].plot(t_fit, y_sim, 'b',  label='$\hat y$')
-    ax[0].plot(t_fit, y_fit-y_sim, 'r',  label='e')
-    unc_std = np.sqrt(np.diag(P_y)).reshape(-1, 1)
-    ax[0].plot(t_fit, 6*unc_std, 'g',  label='$6\sigma$')
-    ax[0].plot(t_fit, -6*unc_std, 'g',  label='$-6\sigma$')
-    ax[0].legend(loc='upper right')
-    ax[0].grid(True)
-    ax[0].set_xlabel(r"Time ($\mu_s$)")
-    ax[0].set_ylabel("Current (A)")
-
-    ax[1].plot(t_fit, u, 'k',  label='$v_{in}$')
-    ax[1].legend(loc='upper right')
-    ax[1].grid(True)
-    ax[1].set_xlabel(r"Time ($\mu_s$)")
-    ax[1].set_ylabel("Voltage (V)")
-
-
-    #%%
-    fig, ax = plt.subplots(1, 2)
-    ax[0].set_title("Covariance")
-    ax[0].matshow(P_post)
-    ax[1].set_title("Covariance Inverse")
-    ax[1].matshow(H_post)
-
-    U, S, VH = np.linalg.svd(H_post, hermitian=True)
-    V = VH.transpose()
-    # Vk = V[:10, :] an identifiable linear combination of parameters
-
-    E, Q = np.linalg.eig(H_post)  # equivalent (up to sign permulations)
-    E = np.real(E)
-    Q = np.real(Q)
-    plt.figure()
-    plt.plot(E, "*")
-
-    #%%
-    plt.figure()
-    plt.suptitle("Covariance Inverse")
-    plt.imshow(H_step)
-    plt.colorbar()
-    plt.show()
-
-    #%%
-
-    plt.figure()
-    plt.suptitle("Covariance")
-    plt.imshow(P_post)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance Recursive")
-    plt.imshow(P_step)
-    plt.colorbar()
-    plt.show()
-
-    plt.figure()
-    plt.suptitle("Covariance error")
-    plt.imshow(P_post - P_step)
-    plt.colorbar()
-    plt.show()
-
+    # Jacobian, experimental
+    #time_jac_start = time.time()
+    #jac_fun = functorch.jacrev(func_model, 0)
+    #jacs = jac_fun(params, x_0, u_v)
+    #jacs_2d = [jac.reshape(N, -1) for jac in jacs]
+    #JJ = torch.cat(jacs_2d, dim=-1)
+    #print(f"Jacobian computation time: {time_jac:.2f} s")

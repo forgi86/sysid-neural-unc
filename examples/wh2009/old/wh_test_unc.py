@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
 
     model_filename = "model.pt"
-    model_data = torch.load(os.path.join("models", model_filename))
+    model_data = torch.load(os.path.join("../models", model_filename))
 
     cov_filename = "covariance.pt"
-    cov_data = torch.load(os.path.join("models", cov_filename))
+    cov_data = torch.load(os.path.join("../models", cov_filename))
 
     P_post = cov_data["P_post"]
     H_post = cov_data["H_post"]
@@ -159,4 +159,3 @@ if __name__ == '__main__':
     ax[1].grid(True)
     ax[1].set_xlabel(r"Time ($\mu_s$)")
     ax[1].set_ylabel("Voltage (V)")
-

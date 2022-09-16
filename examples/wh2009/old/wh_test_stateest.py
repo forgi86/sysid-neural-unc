@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     matplotlib.rc('font', **{'size': 14, 'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
-    model_data = torch.load(os.path.join("models", "model.pt"), map_location=torch.device('cpu'))  # best
+    model_data = torch.load(os.path.join("../models", "model.pt"), map_location=torch.device('cpu'))  # best
 
     n_x = 6
     n_y = 1

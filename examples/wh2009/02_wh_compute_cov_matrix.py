@@ -1,4 +1,5 @@
 import os
+import time
 import numpy as np
 import torch
 import matplotlib
@@ -10,7 +11,6 @@ from loader import wh2009_loader
 import matplotlib.pyplot as plt
 
 
-# Truncated simulation error minimization method
 if __name__ == '__main__':
 
     model_filename = "model.pt"
@@ -78,6 +78,7 @@ if __name__ == '__main__':
     scaling_P = 1/scaling_H
     # scaling_phi = np.sqrt(beta_noise * scaling_H)  # np.sqrt(1/N)
 
+    time_start = time.time()
     # negative Hessian of the log-prior
     H_prior = torch.eye(n_param, dtype=dtype) * tau_prior * scaling_H
     P_prior = torch.eye(n_param, dtype=dtype) / tau_prior * scaling_P
@@ -146,6 +147,10 @@ if __name__ == '__main__':
 
     # information matrix (or approximate negative Hessian of the log-likelihood)
     H_post = H_prior + H_step
+
+    time_hess = time.time()-time_start
+    print(f"Hessian computation time: {time_hess:.2f} s")
+
     P_post = torch.linalg.pinv(H_post)
     #P_step = P_step.numpy()
     #H_step = H_step.numpy()

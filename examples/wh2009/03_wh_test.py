@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "MULTISINE_1"
+    SIGNAL = "MULTISINE_3"
     #SIGNAL = "CHIRP"
 
 
@@ -79,14 +79,14 @@ if __name__ == '__main__':
         u_test = 1.0*np.sin(2*np.pi*f*t_test)
 
     ## multisine tests ##
-    elif SIGNAL == "MULTISINE_1":  # RMSE = 5.6, FIT=98.1, surprise=0.34
+    elif SIGNAL == "MULTISINE_1":  # RMSE = 5.6, FIT=98.1, surprise=0.34, coverage=99.2
         N = 5_000
         fmax = 2000  # equivalent to training data
         a = 0.4  # equivalent to training
         pmax = int(N*fmax/fs)
         u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
 
-    elif SIGNAL == "MULTISINE_2":  # RMSE = 5.9, FIT=97.7, surprise=0.43
+    elif SIGNAL == "MULTISINE_2":  # RMSE = 5.9, FIT=97.7, surprise=0.43, coverage=98.6
         N = 5_000
         fmin = 1_000
         fmax = 2_000
@@ -96,14 +96,14 @@ if __name__ == '__main__':
         pmin = max(pmin, 1)
         u_test = a * multisine(N, 1, pmin=pmin, pmax=pmax, prule=lambda p: True)
 
-    elif SIGNAL == "MULTISINE_3":  # RMSE = 32.5, FIT=93.9, surprise=2.10
+    elif SIGNAL == "MULTISINE_3":  # RMSE = 32.5, FIT=93.9, surprise=2.10, coverage=96.1
         N = 5_000
         fmax = 2_000  # equivalent to training data
         a = 0.8  # double training
         pmax = int(N*fmax/fs)
         u_test = a * multisine(N, 1, pmin=1, pmax=pmax, prule=lambda p: True)
 
-    elif SIGNAL == "MULTISINE_4":  # RMSE = 16.8, FIT=87.8, surprise=4.03
+    elif SIGNAL == "MULTISINE_4":  # RMSE = 16.8, FIT=87.8, surprise=4.03, coverage=80.6
         N = 5_000
         fmin = 0
         fmax = 10_000
@@ -286,6 +286,7 @@ if __name__ == '__main__':
     fit_idx = metrics.fit_index(y_metrics, y_sim_metrics)[0]
     r_sq = metrics.r_squared(y_metrics, y_sim_metrics)[0]
 
+    print(f"Signal: {SIGNAL}")
     print(f"RMSE: {e_rms:.1f}mV\nFIT:  {fit_idx:.1f}%\nR_sq: {r_sq:.4f}")
 
     #%%
@@ -299,4 +300,7 @@ if __name__ == '__main__':
     surprise = (100*mabs(unc_std) / mabs(y_sim))[0]
     print(f"surprise: {surprise:.5f}")
 
-
+    err = y_test - y_sim
+    in_band = np.abs(err) < 3 * ppd_std
+    coverage = np.sum(in_band)/N * 100
+    print(f"coverage: {coverage:.1f}%")
