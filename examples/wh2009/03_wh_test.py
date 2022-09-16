@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     # Evaluate the model in open-loop simulation against validation data
 
-    u = torch.from_numpy(u_test)
+    u = torch.tensor(u_test, dtype=dtype)
     x_step = torch.zeros(n_x, dtype=dtype, requires_grad=True)
     s_step = torch.zeros(n_x, n_fparam, dtype=dtype)
 

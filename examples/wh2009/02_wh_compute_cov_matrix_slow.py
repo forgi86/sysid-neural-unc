@@ -32,11 +32,11 @@ if __name__ == '__main__':
     est_hidden_size = 15
     hidden_size = 15
     idx_start = 0 #5000
-    n_fit = 10_000//2
+    n_fit = 10_000
     n_val = 5_000
 
     no_cuda = True  # no GPU, CPU only training
-    dtype = torch.float64
+    dtype = torch.float32
     threads = 6  # max number of CPU threads
     tau_prior = 0.1  # precision (1/var) of the prior on theta
     sigma_noise = 5e-3  # noise variance (could be learnt instead)
@@ -84,12 +84,12 @@ if __name__ == '__main__':
 
     # Naive jacobian computation
     time_jac_start = time.time()
-    jac_fun = functorch.jacrev(func_model, 0)
-    jacs = jac_fun(params, x_0, u_v)
-    jacs_2d = [jac.reshape(N, -1) for jac in jacs]
-    J = torch.cat(jacs_2d, dim=-1)
+    #jac_fun = functorch.jacrev(func_model, 0)
+    #jacs = jac_fun(params, x_0, u_v)
+    #jacs_2d = [jac.reshape(N, -1) for jac in jacs]
+    #J = torch.cat(jacs_2d, dim=-1)
 
-    #J = parameter_jacobian(model, x_0, u_v, vectorize=True, flatten=True)
+    J = parameter_jacobian(model, x_0, u_v, vectorize=True, flatten=True)
     time_jac = time.time() - time_jac_start
     print(f"Jacobian computation time: {time_jac:.2f} s")
 

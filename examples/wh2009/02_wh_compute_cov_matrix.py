@@ -149,7 +149,7 @@ if __name__ == '__main__':
     H_post = H_prior + H_step
 
     time_hess = time.time()-time_start
-    print(f"Hessian computation time: {time_hess:.2f} s")
+    print(f"GN Hessian computation time: {time_hess:.2f} s")
 
     P_post = torch.linalg.pinv(H_post)
     #P_step = P_step.numpy()
