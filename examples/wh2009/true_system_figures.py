@@ -24,11 +24,11 @@ if __name__ == '__main__':
     # %%
 
     plt.figure()
-    control.bode(G1, omega_limits=[1e3, 1e5], Hz=True, label="$G_1(z)$", wrap_phase=False, dB=True)
+    control.bode(G1, omega_limits=[1e3, 1e5], Hz=True, label="$G_1(z)$", wrap_phase=True, dB=True)
 
     b2, a2 = scipy.signal.cheby2(N=3, rs=40, Wn=5e3, btype='low', analog=False, output='ba', fs=fs)
     G2 = control.TransferFunction(b2, a2, ts)
-    control.bode(G2, omega_limits=[1e3, 1e5], Hz=True, label="$G_2(z)$", wrap_phase=False, dB=True)
+    control.bode(G2, omega_limits=[1e3, 1e5], Hz=True, label="$G_2(z)$", wrap_phase=True, dB=True)
     plt.legend()
     plt.tight_layout()
     plt.savefig("wh_bode.pdf")
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.savefig("wh_static.pdf")
 
+    # Bode plot (magnitude only)
     mag1, phase1, omega1 = control.bode_plot(G1, omega_limits=[3e3, 1e5], plot=False)
     mag2, phase2, omega2 = control.bode_plot(G2, omega_limits=[3e3, 1e5], plot=False)
     fig, ax = plt.subplots(1, 1, figsize=(8, 4))
