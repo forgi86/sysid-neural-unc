@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use("TKAgg")
 import torch.nn as nn
 import torchid.ss.dt.models as models
-from models import WHSys
+from true_system import WHSys
 from torchid.ss.dt.simulator import StateSpaceSimulator
 from common_input_signals import multisine
 import matplotlib.pyplot as plt
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "MULTISINE_3"
+    SIGNAL = "MULTISINE_4"
     #SIGNAL = "CHIRP"
 
 
@@ -222,7 +222,7 @@ if __name__ == '__main__':
     ppd_var = unc_var + var_noise
     ppd_std = np.sqrt(ppd_var)
     #%%
-    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(6, 5.5))
+    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(8, 4.5))
 
     ax[0].plot(t_test, y_test, 'k', label='$\mathbf{y}^*$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat{\mathbf{y}}^*$')
@@ -230,7 +230,7 @@ if __name__ == '__main__':
                      (y_sim + 3 * ppd_std).ravel(),
                      (y_sim - 3 * ppd_std).ravel(),
                      alpha=0.3,
-                     color='c', label="99% C.I.")
+                     color='c', label="99.7 % C.I.")
     ax[0].grid(True)
     ax[0].legend(loc='upper left', bbox_to_anchor=(1.05, 1.0))
     factor = 1000
@@ -241,7 +241,7 @@ if __name__ == '__main__':
                      factor * 3 * ppd_std.ravel(),
                      factor * -3 * ppd_std.ravel(),
                      alpha=0.3,
-                     color='r', label="99% C.I.")
+                     color='r', label="99.7 % C.I.")
 
     #ax[1].set_ylim(np.array([-0.01, 0.01])*factor)
     ax[1].grid()

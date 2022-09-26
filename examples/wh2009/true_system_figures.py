@@ -39,6 +39,9 @@ if __name__ == '__main__':
     in_nl = np.arange(y1_lin_min, y1_lin_max, (y1_lin_max - y1_lin_min) / 1000).astype(np.float32).reshape(-1, 1)
     out_nl = -torch.nn.functional.elu(-torch.from_numpy(10 / 11 * (in_nl - 0.0)), alpha=1.0) + 0.0
 
+    font = {'size': 18,
+            'family': 'serif'}
+    mpl.rc('font', **font)
     plt.figure()
     plt.plot(in_nl, out_nl, 'r')
     plt.xlabel('Static non-linearity input (-)')
@@ -48,3 +51,15 @@ if __name__ == '__main__':
     plt.grid(True)
     plt.tight_layout()
     plt.savefig("wh_static.pdf")
+
+    mag1, phase1, omega1 = control.bode_plot(G1, omega_limits=[3e3, 1e5], plot=False)
+    mag2, phase2, omega2 = control.bode_plot(G2, omega_limits=[3e3, 1e5], plot=False)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+    ax.semilogx(omega1/(2. * np.pi), 20 * np.log10(mag1), label="$G_1(z)$", linewidth=2)
+    ax.semilogx(omega2/(2. * np.pi), 20 * np.log10(mag2), label="$G_2(z)$", linewidth=2)
+    ax.set_ylabel("Magnitude (dB)")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.legend(loc="lower left")
+    ax.grid(True, which="both")
+    plt.tight_layout()
+    plt.savefig("wh_bode_mag.pdf")

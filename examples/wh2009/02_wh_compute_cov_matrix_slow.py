@@ -99,14 +99,6 @@ if __name__ == '__main__':
         return loss
 
     time_hess_start = time.time()
-    H = torch.autograd.functional.hessian(loss_fun, params, vectorize=True)
+    H = torch.autograd.functional.hessian(loss_fun, params)
     time_hess = time.time() - time_hess_start
     print(f"Hessian computation time: {time_hess:.2f} s")
-
-    # Jacobian, experimental
-    #time_jac_start = time.time()
-    #jac_fun = functorch.jacrev(func_model, 0)
-    #jacs = jac_fun(params, x_0, u_v)
-    #jacs_2d = [jac.reshape(N, -1) for jac in jacs]
-    #JJ = torch.cat(jacs_2d, dim=-1)
-    #print(f"Jacobian computation time: {time_jac:.2f} s")
