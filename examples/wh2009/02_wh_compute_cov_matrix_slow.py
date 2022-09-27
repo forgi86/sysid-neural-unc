@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     loss = torch.mean((y_sim - y_v)**2)
 
-    # Exact Hessian computation
+    # Make model functional
     func_model, params = functorch.make_functional(model)
 
     # Naive jacobian computation
