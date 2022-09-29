@@ -1,7 +1,7 @@
 # Neural state-space models: Empirical evaluation of uncertainty quantification
 
 This repository contains the Python code to reproduce the results of the paper Neural state-space models: Empirical evaluation of uncertainty quantification
- by Marco Forgione, Dario Piga.
+ by Marco Forgione and Dario Piga.
 
 
 # Folders:
