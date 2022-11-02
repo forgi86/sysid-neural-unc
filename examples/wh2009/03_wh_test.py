@@ -2,8 +2,8 @@ import os
 import numpy as np
 import scipy
 import torch
-import matplotlib
-matplotlib.use("TKAgg")
+import matplotlib as mpl
+mpl.use("TKAgg")
 import torch.nn as nn
 import torchid.ss.dt.models as models
 from true_system import WHSys
@@ -17,6 +17,11 @@ from torchid import metrics
 if __name__ == '__main__':
 
     np.random.seed(42)
+
+    font = {'size': 14,
+            'family': 'serif'}
+
+    mpl.rc('font', **font)
 
     model_filename = "model.pt"
     model_data = torch.load(os.path.join("models", model_filename))
@@ -67,7 +72,7 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "MULTISINE_4"
+    SIGNAL = "MULTISINE_1"
     #SIGNAL = "CHIRP"
 
 
@@ -222,7 +227,7 @@ if __name__ == '__main__':
     ppd_var = unc_var + var_noise
     ppd_std = np.sqrt(ppd_var)
     #%%
-    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(8, 4.5))
+    fig, ax = plt.subplots(3, 1, sharex=True, figsize=(8, 5.0))
 
     ax[0].plot(t_test, y_test, 'k', label='$\mathbf{y}^*$')
     ax[0].plot(t_test, y_sim, 'b', label='$\hat{\mathbf{y}}^*$')
