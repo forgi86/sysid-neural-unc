@@ -11,6 +11,7 @@ from torchid.ss.dt.simulator import StateSpaceSimulator
 from common_input_signals import multisine
 import matplotlib.pyplot as plt
 from torchid import metrics
+import functorch
 
 
 # Truncated simulation error minimization method
@@ -72,7 +73,7 @@ if __name__ == '__main__':
 
     sys = WHSys()
 
-    SIGNAL = "MULTISINE_1"
+    SIGNAL = "MULTISINE_4"
     #SIGNAL = "CHIRP"
 
 
@@ -169,6 +170,8 @@ if __name__ == '__main__':
     J_rows = []
     unc_var_step = []
 
+    basis_y = torch.eye(n_y)#.unbind()
+    basis_x = torch.eye(n_x)#.unbind()
     for time_idx in range(N):
         # print(time_idx)
 
@@ -181,7 +184,7 @@ if __name__ == '__main__':
         y_sim.append(y_step)
 
         # Jacobian of y wrt x
-        basis_y = torch.eye(n_y).unbind()
+        #basis_y = torch.eye(n_y).unbind()
         jacs_gx = [torch.autograd.grad(y_step, x_step, v, retain_graph=True)[0] for v in basis_y]
         J_gx = torch.stack(jacs_gx, dim=0)
 
@@ -199,16 +202,25 @@ if __name__ == '__main__':
         # Current x
         # System update
         delta_x = 1.0 * f_xu(x_step, u_step)
-        basis_x = torch.eye(n_x).unbind()
+        #basis_x = torch.eye(n_x).unbind()
 
         # Jacobian of delta_x wrt x
-        jacs_fx = [torch.autograd.grad(delta_x, x_step, v, retain_graph=True)[0] for v in basis_x]
-        J_fx = torch.stack(jacs_fx, dim=0)
+        def get_vjp_x(v):
+            return torch.autograd.grad(delta_x, x_step, v, retain_graph=True)[0]
+        J_fx = functorch.vmap(get_vjp_x)(basis_x)
+#        jacs_fx = [torch.autograd.grad(delta_x, x_step, v, retain_graph=True)[0] for v in basis_x]
+#        J_fx = torch.stack(jacs_fx, dim=0)
 
         # Jacobian of delta_x wrt theta
-        jacs_ftheta = [torch.autograd.grad(delta_x, f_xu.parameters(), v, retain_graph=True) for v in basis_x]
-        jacs_ftheta_f = [torch.cat([jac.ravel() for jac in jacs_ftheta[j]]) for j in range(n_x)]  # ravel jacobian rows
-        J_ftheta = torch.stack(jacs_ftheta_f)  # stack jacobian rows to obtain a jacobian matrix
+        def get_vjp_par(v):
+            return torch.autograd.grad(delta_x, f_xu.parameters(), v, retain_graph=False)
+        jacs_ftheta = functorch.vmap(get_vjp_par)(basis_x)
+        jacs_ftheta_f = [j.view(n_x, -1) for j in jacs_ftheta]
+        J_ftheta = torch.cat(jacs_ftheta_f, 1)
+
+        #jacs_ftheta = [torch.autograd.grad(delta_x, f_xu.parameters(), v, retain_graph=True) for v in basis_x]
+        #jacs_ftheta_f = [torch.cat([jac.ravel() for jac in jacs_ftheta[j]]) for j in range(n_x)]  # ravel jacobian rows
+        #J_ftheta = torch.stack(jacs_ftheta_f)  # stack jacobian rows to obtain a jacobian matrix
 
         x_step = (x_step + delta_x).detach().requires_grad_(True)
 
