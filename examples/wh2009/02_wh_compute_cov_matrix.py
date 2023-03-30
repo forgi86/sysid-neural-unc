@@ -217,7 +217,7 @@ if __name__ == '__main__':
     V = VH.transpose()
     # Vk = V[:10, :] an identifiable linear combination of parameters
 
-    E, Q = np.linalg.eig(H_post)  # equivalent (up to sign permulations)
+    E, Q = np.linalg.eig(H_post)  # equivalent (up to sign permutations)
     E = np.real(E)
     Q = np.real(Q)
     plt.figure()
@@ -250,3 +250,21 @@ if __name__ == '__main__':
     plt.colorbar()
     plt.show()
 
+    # %%
+    fig, ax = plt.subplots()
+    c = ax.pcolormesh(H_step.abs())#, cmap='RdBu')
+    ax.set_title('GN Hessian')
+    fig.colorbar(c, ax=ax)
+    fig.savefig('GN_Hessian.pdf')
+    fig.savefig('GN_Hessian.png')
+
+    # 4-5 non-degenerate directions
+    E, Q = np.linalg.eig(H_step)  # equivalent (up to sign permutations)
+    E = np.real(E)
+    Q = np.real(Q)
+
+    plt.figure()
+    plt.plot(E, "*")
+    plt.axhline(0, color="red")
+    plt.grid()
+    plt.savefig('GN_Hessian_eigs.pdf')
