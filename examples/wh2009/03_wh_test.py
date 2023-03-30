@@ -224,7 +224,7 @@ if __name__ == '__main__':
 
         x_step = (x_step + delta_x).detach().requires_grad_(True)
 
-        s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14a in the fast adaptation paper
+        s_step = s_step + J_fx @ s_step + J_ftheta  # Eq. 14b in the fast adaptation paper
 
     unc_var = torch.cat(unc_var_step)
     #J = torch.cat(J_rows).squeeze(-1)
