@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2017/Debian)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: main.aux
+The style file: ifacconf.bst
+Database file #1: references.bib
+Warning--can't use both volume and number fields in bishop2006pattern
+You've used 20 entries,
+            2921 wiz_defined-function locations,
+            709 strings with 8904 characters,
+and the built_in function-call counts, 13405 in all, are:
+= -- 1040
+> -- 660
+< -- 6
++ -- 245
+- -- 219
+* -- 1010
+:= -- 2055
+add.period$ -- 64
+call.type$ -- 20
+change.case$ -- 179
+chr.to.int$ -- 20
+cite$ -- 21
+duplicate$ -- 986
+empty$ -- 978
+format.name$ -- 285
+if$ -- 2657
+int.to.chr$ -- 1
+int.to.str$ -- 1
+missing$ -- 217
+newline$ -- 111
+num.names$ -- 80
+pop$ -- 473
+preamble$ -- 1
+purify$ -- 151
+quote$ -- 0
+skip$ -- 348
+stack$ -- 0
+substring$ -- 536
+swap$ -- 514
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 174
+warning$ -- 1
+while$ -- 82
+width$ -- 0
+write$ -- 269
+(There was 1 warning)

@@ -1,0 +1,157 @@
+\begin{thebibliography}{22}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi:\discretionary{}{}{}#1}\else
+  \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
+  \urlstyle{rm}\Url}\fi
+
+\bibitem[{Andersson et~al.(2019)Andersson, Ribeiro, Tiels, Wahlström, and
+  Schön}]{andersson2019}
+Andersson, C., Ribeiro, A.H., Tiels, K., Wahlström, N., and Schön, T.B.
+  (2019).
+\newblock {D}eep {C}onvolutional {N}etworks in {S}ystem {I}dentification.
+\newblock In \emph{2019 IEEE 58th Conference on Decision and Control (CDC)},
+  3670--3676.
+\newblock \doi{10.1109/CDC40024.2019.9030219}.
+
+\bibitem[{Beintema et~al.(2021)Beintema, T{\'o}th, and
+  Schoukens}]{beintema2021nonlinear}
+Beintema, G., T{\'o}th, R., and Schoukens, M. (2021).
+\newblock Nonlinear state-space identification using deep encoder networks.
+\newblock In \emph{Learning for Dynamics and Control}, 241--250. PMLR.
+
+\bibitem[{Bishop and Nasrabadi(2006)}]{bishop2006pattern}
+Bishop, C.M. and Nasrabadi, N.M. (2006).
+\newblock \emph{Pattern recognition and machine learning}, volume~4.
+\newblock Springer.
+
+\bibitem[{Forgione et~al.(2022)Forgione, Muni, Piga, and
+  Gallieri}]{forgione2022adaptation}
+Forgione, M., Muni, A., Piga, D., and Gallieri, M. (2022).
+\newblock On the adaptation of recurrent neural networks for system
+  identification.
+\newblock \emph{arXiv preprint arXiv:2201.08660}.
+
+\bibitem[{Forgione and Piga(2020)}]{forgione2020model}
+Forgione, M. and Piga, D. (2020).
+\newblock Model structures and fitting criteria for system identification with
+  neural networks.
+\newblock In \emph{2020 IEEE 14th International Conference on Application of
+  Information and Communication Technologies (AICT)}, 1--6.
+\newblock \doi{10.1109/AICT50176.2020.9368834}.
+
+\bibitem[{Forgione and Piga(2021)}]{Forgione202169}
+Forgione, M. and Piga, D. (2021).
+\newblock Continuous-time system identification with neural networks: Model
+  structures and fitting criteria.
+\newblock \emph{European Journal of Control}, 59, 69--81.
+
+\bibitem[{Gawlikowski et~al.(2021)Gawlikowski, Tassi, Ali, Lee, Humt, Feng,
+  Kruspe, Triebel, Jung, Roscher et~al.}]{gawlikowski2021survey}
+Gawlikowski, J., Tassi, C.R.N., Ali, M., Lee, J., Humt, M., Feng, J., Kruspe,
+  A., Triebel, R., Jung, P., Roscher, R., et~al. (2021).
+\newblock A {S}urvey of {U}ncertainty in {D}eep {N}eural {N}etworks.
+\newblock \emph{arXiv preprint arXiv:2107.03342}.
+
+\bibitem[{Izmailov et~al.(2021)Izmailov, Vikram, Hoffman, and
+  Wilson}]{izmailov2021bayesian}
+Izmailov, P., Vikram, S., Hoffman, M.D., and Wilson, A.G.G. (2021).
+\newblock {W}hat are {B}ayesian {N}eural {N}etwork {P}osteriors {R}eally
+  {L}ike?
+\newblock In \emph{International conference on machine learning}, 4629--4640.
+  PMLR.
+
+\bibitem[{Lakshminarayanan et~al.(2017)Lakshminarayanan, Pritzel, and
+  Blundell}]{lakshminarayanan2017simple}
+Lakshminarayanan, B., Pritzel, A., and Blundell, C. (2017).
+\newblock {S}imple and {S}calable {P}redictive {U}ncertainty {E}stimation using
+  {D}eep {E}nsembles.
+\newblock \emph{Advances in neural information processing systems}, 30.
+
+\bibitem[{Ljung et~al.(2020)Ljung, Andersson, Tiels, and
+  Sch{\"o}n}]{ljung2020deep}
+Ljung, L., Andersson, C., Tiels, K., and Sch{\"o}n, T.B. (2020).
+\newblock {D}eep {L}earning and {S}ystem {I}dentification.
+\newblock \emph{IFAC-PapersOnLine}, 53(2), 1175--1181.
+
+\bibitem[{Loquercio et~al.(2020)Loquercio, Segu, and
+  Scaramuzza}]{loquercio2020general}
+Loquercio, A., Segu, M., and Scaramuzza, D. (2020).
+\newblock A {G}eneral {F}ramework for {U}ncertainty {E}stimation in {D}eep
+  {L}earning.
+\newblock \emph{IEEE Robotics and Automation Letters}, 5(2), 3153--3160.
+
+\bibitem[{Maddox et~al.(2019)Maddox, Izmailov, Garipov, Vetrov, and
+  Wilson}]{maddox2019simple}
+Maddox, W.J., Izmailov, P., Garipov, T., Vetrov, D.P., and Wilson, A.G. (2019).
+\newblock A {S}imple {B}aseline for {B}ayesian {U}ncertainty in {D}eep
+  {L}earning.
+\newblock \emph{Advances in Neural Information Processing Systems}, 32.
+
+\bibitem[{Mavkov et~al.(2020)Mavkov, Forgione, and Piga}]{Mavkov20}
+Mavkov, B., Forgione, M., and Piga, D. (2020).
+\newblock Integrated neural networks for nonlinear continuous-time system
+  identification.
+\newblock \emph{IEEE Control Systems Letters}, 4(4), 851--856.
+
+\bibitem[{Peeters et~al.(2022)Peeters, Beintema, Forgione, and
+  Schoukens}]{peeters2022narx}
+Peeters, L., Beintema, G.I., Forgione, M., and Schoukens, M. (2022).
+\newblock {NARX} identification using {D}erivative-{B}ased {R}egularized
+  {N}eural {N}etworks.
+\newblock \emph{arXiv preprint arXiv:2204.05892}.
+
+\bibitem[{Ram{\'i}rez-Chavarr{\'i}a and Schoukens(2021)}]{nfir}
+Ram{\'i}rez-Chavarr{\'i}a, R. and Schoukens, M. (2021).
+\newblock {N}onlinear {F}inite {I}mpulse {R}esponse {E}stimation using
+  {R}egularized {N}eural {N}etworks.
+\newblock \emph{IFAC-PapersOnLine}, 54(7), 174--179.
+\newblock \doi{10.1016/j.ifacol.2021.08.354}.
+
+\bibitem[{Schoukens et~al.(2009)Schoukens, Suykens, and
+  Ljung}]{schoukens2009wiener}
+Schoukens, J., Suykens, J., and Ljung, L. (2009).
+\newblock {W}iener-{H}ammerstein benchmark.
+\newblock In \emph{Proc. of the 15th IFAC symposium on System Identification
+  (SYSID 2009)}.
+
+\bibitem[{Srivastava et~al.(2014)Srivastava, Hinton, Krizhevsky, Sutskever, and
+  Salakhutdinov}]{srivastava2014dropout}
+Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I., and Salakhutdinov,
+  R. (2014).
+\newblock Dropout: {A} {S}imple {W}ay to {P}revent {N}eural {N}etworks from
+  {O}verfitting.
+\newblock \emph{The journal of machine learning research}, 15(1), 1929--1958.
+
+\bibitem[{Van~den Bos(2007)}]{van2007parameter}
+Van~den Bos, A. (2007).
+\newblock \emph{Parameter estimation for scientists and engineers}.
+\newblock John Wiley \& Sons.
+
+\bibitem[{Wilson and Izmailov(2020)}]{wilson2020bayesian}
+Wilson, A.G. and Izmailov, P. (2020).
+\newblock {B}ayesian {D}eep {L}earning and a {P}robabilistic {P}erspective of
+  {G}eneralization.
+\newblock \emph{Advances in neural information processing systems}, 33,
+  4697--4708.
+
+\bibitem[{Wright et~al.(1999)Wright, Nocedal et~al.}]{wright1999numerical}
+Wright, S., Nocedal, J., et~al. (1999).
+\newblock Numerical optimization.
+\newblock \emph{Springer Science}, 35(67-68), 7.
+
+\bibitem[{Wu and Jahanshahi(2019)}]{wu2019deep}
+Wu, R.T. and Jahanshahi, M.R. (2019).
+\newblock Deep {C}onvolutional {N}eural {N}etwork for {S}tructural {D}ynamic
+  {R}esponse {E}stimation and {S}ystem {I}dentification.
+\newblock \emph{Journal of Engineering Mechanics}, 145(1), 04018125.
+
+\bibitem[{Zhou et~al.(2022)Zhou, Ibrahim, Zheng, and Pan}]{zhou2022sparse}
+Zhou, H., Ibrahim, C., Zheng, W.X., and Pan, W. (2022).
+\newblock Sparse {B}ayesian {D}eep {L}earning for {D}ynamic {S}ystem
+  {I}dentification.
+\newblock \emph{Automatica}, 144, 110489.
+
+\end{thebibliography}

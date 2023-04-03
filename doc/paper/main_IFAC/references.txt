@@ -1,0 +1,90 @@
+Andersson, C., Ribeiro, A.H., Tiels, K., Wahlström, N.,
+and Schön, T.B. (2019). Deep Convolutional Networks
+in System Identification. In 2019 IEEE 58th Conference
+on Decision and Control (CDC), 3670–3676. doi:10.
+1109/CDC40024.2019.9030219.
+
+Beintema, G., Tóth, R., and Schoukens, M. (2021). Non-
+linear state-space identification using deep encoder net-
+works. In Learning for Dynamics and Control, 241–250.
+PMLR.
+
+Bishop, C.M. and Nasrabadi, N.M. (2006). Pattern recog-
+nition and machine learning, volume 4. Springer.
+
+Forgione, M., Muni, A., Piga, D., and Gallieri, M. (2022).
+On the adaptation of recurrent neural networks for
+system identification. arXiv preprint arXiv:2201.08660.
+
+Forgione, M. and Piga, D. (2020). Model structures and
+fitting criteria for system identification with neural net-
+works. In 2020 IEEE 14th International Conference on
+Application of Information and Communication Tech-
+nologies (AICT), 1–6. doi:10.1109/AICT50176.2020.
+9368834.
+
+Gawlikowski, J., Tassi, C.R.N., Ali, M., Lee, J., Humt, M.,
+Feng, J., Kruspe, A., Triebel, R., Jung, P., Roscher, R.,
+et al. (2021). A Survey of Uncertainty in Deep Neural
+Networks. arXiv preprint arXiv:2107.03342.
+
+Izmailov, P., Vikram, S., Hoffman, M.D., and Wilson,
+A.G.G. (2021). What are Bayesian Neural Network
+Posteriors Really Like? In International conference on
+machine learning, 4629–4640. PMLR.
+
+Lakshminarayanan, B., Pritzel, A., and Blundell, C.
+(2017). Simple and Scalable Predictive Uncertainty
+Estimation using Deep Ensembles. Advances in Neural
+Information Processing Systems, 30.
+
+Ljung, L., Andersson, C., Tiels, K., and Schön, T.B.
+(2020). Deep Learning and System Identification. IFAC-
+PapersOnLine, 53(2), 1175–1181.
+
+Loquercio, A., Segu, M., and Scaramuzza, D. (2020). A
+General Framework for Uncertainty Estimation in Deep
+Learning. IEEE Robotics and Automation Letters, 5(2),
+3153–3160.
+
+Maddox, W.J., Izmailov, P., Garipov, T., Vetrov, D.P., and
+Wilson, A.G. (2019). A Simple Baseline for Bayesian
+Uncertainty in Deep Learning. Advances in Neural
+Information Processing Systems, 32.
+
+Mavkov, B., Forgione, M., and Piga, D. (2020). Integrated
+neural networks for nonlinear continuous-time system
+identification. IEEE Control Systems Letters, 4(4), 851–
+856.
+Peeters, L., Beintema, G.I., Forgione, M., and Schoukens,
+M. (2022). NARX identification using Derivative-
+Based Regularized Neural Networks. arXiv preprint
+arXiv:2204.05892.
+
+Schoukens, J., Suykens, J., and Ljung, L. (2009). Wiener-
+Hammerstein benchmark. In Proc. of the 15th IFAC
+symposium on System Identification (SYSID 2009).
+Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I.,
+and Salakhutdinov, R. (2014). Dropout: A Simple Way
+to Prevent Neural Networks from Overfitting. The
+Journal of Machine Learning Research, 15(1), 1929–
+1958.
+
+Van den Bos, A. (2007). Parameter estimation for scien-
+tists and engineers. John Wiley & Sons.
+
+Wilson, A.G. and Izmailov, P. (2020). Bayesian Deep
+Learning and a Probabilistic Perspective of Generaliza-
+tion. Advances in neural information processing sys-
+tems, 33, 4697–4708.
+
+Wright, S., Nocedal, J., et al. (1999). Numerical optimiza-
+tion. Springer Science, 35(67-68), 7.
+Wu, R.T. and Jahanshahi, M.R. (2019). Deep Convolu-
+tional Neural Network for Structural Dynamic Response
+Estimation and System Identification. Journal of Engi-
+neering Mechanics, 145(1), 04018125.
+
+Zhou, H., Ibrahim, C., Zheng, W.X., and Pan, W. (2022).
+Sparse Bayesian Deep Learning for Dynamic System
+Identification. Automatica, 144, 110489.
