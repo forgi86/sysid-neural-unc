@@ -1,16 +1,18 @@
-%===============================================================================
-% ifacconf.tex 2022-02-11 jpuente  
-% Template for IFAC meeting papers
-% Copyright (c) 2022 International Federation of Automatic Control
-%===============================================================================
-\documentclass{ifacconf}
+\documentclass{article}
 
 
 \usepackage{graphicx}      % include this line if your document contains figures
-\usepackage{natbib}        % required for bibliography
+\usepackage[authoryear]{natbib}
+\bibliographystyle{abbrvnat}
+\setcitestyle{authoryear}
+%\usepackage{color}
+%\usepackage{algorithm}
+%\usepackage{multirow}
 \usepackage{amsmath} % assumes amsmath package installed
 \usepackage{amssymb}  % assumes amsmath package installed
 \usepackage{url}
+\usepackage{authblk}
+
 \usepackage{nicefrac}
 
 \DeclareMathOperator{\vect}{vec}
@@ -34,19 +36,24 @@
 \newcommand{\D}{\mathcal{D}} % dataset
 \newtheorem{remark}{Remark}%[section]
 
+\author[1]{Marco Forgione} 
+\author[1]{Dario Piga} 
+
+\affil[1]{{IDSIA Dalle Molle Institute for Artificial Intelligence USI-SUPSI, Lugano, Switzerland. (  
+name.surname@supsi.ch).}}
+
+\title{Neural State-Space Models: Empirical Evaluation of Uncertainty Quantification} 
+
 %===============================================================================
 \begin{document}
-\begin{frontmatter}
+\maketitle
 
-\title{Neural state-space models: empirical evaluation of uncertainty quantification} 
+%\begin{frontmatter}
+
 % Title, preferably not more than 10 words.
 
-\thanks[footnoteinfo]{This work was partially supported by the European H2020-CS2 project ADMITTED, Grant agreement no. GA832003.}
+%\thanks[footnoteinfo]{This work was partially supported by the European H2020-CS2 project ADMITTED, Grant agreement no. GA832003.}
 
-\author{Marco Forgione} 
-\author{Dario Piga} 
-
-\address{IDSIA Dalle Molle Institute for Artificial Intelligence SUPSI-USI, Manno, Switzerland. (e-mail: marco.forgione@ supsi.ch; dario.piga@suspi.ch).}
 
 \begin{abstract}                
 Effective quantification of uncertainty is an essential and still missing step towards a greater adoption of deep-learning approaches in 
@@ -56,36 +63,43 @@ and obtain posterior distributions for the neural network's weights and outputs 
 Based on the posterior, we construct credible intervals on the outputs and define a \emph{surprise index} which can effectively diagnose usage of the model in a potentially dangerous out-of-distribution regime, where  predictions cannot be trusted.
 \end{abstract}
 
-\begin{keyword}
-Neural Networks, System Identification, Uncertainty quantification.
-\end{keyword}
+\vskip .5em
 
-\end{frontmatter}
-%===============================================================================
+\noindent\rule{\textwidth}{1pt}
+Please cite this version of the paper:\\ \\
+M. Forgione and D. Piga. Neural State-Space Models: Empirical Evaluation of Uncertainty Quantification. In \textit{Proc. of the 22nd IFAC World Congress, Yokohama, Japan}, 2023.
+\vskip 1em \noindent
+You may use the following bibtex entry:
+\begin{verbatim}
+@inproceedings{forgione2023empirical,
+  title={{Neural State-Space Models: Empirical Evaluation
+          of Uncertainty Quantification}},
+  author={Forgione, Marco and Piga, Dario},
+  booktitle={Proc. of the 22nd IFAC World Congress, Yokohama, Japan},
+  year={2023}
+}
+\end{verbatim}
+\noindent\rule{\textwidth}{1pt}
 
 \section{Introduction}
-In recent years, the system identification research community has shown renewed interest in deep-learning tools and techniques for data-driven modeling of non-linear dynamical systems \citep{ljung2020deep}. %..CITE OUR WORKS AND SIMILAR ONES \vskip 8em 
+In recent years, the system identification community has shown renewed interest in deep-learning tools and techniques for data-driven modeling of non-linear dynamical systems \citep{ljung2020deep}. %..CITE OUR WORKS AND SIMILAR ONES \vskip 8em 
 To cite a few examples, system identification approaches based on 1-D convolutional neural networks are presented in \cite{andersson2019, wu2019deep}.
 Training of neural NARX architectures with a regularization term promoting decay of the model's linearized impulse response are introduced in 
-\cite{peeters2022narx}. Neural networks architectures and fitting criteria  for continuous-time dynamical model identification are presented in \cite{Mavkov20}. % and \citep{Forgione202169}.  
+\cite{peeters2022narx}. Neural networks architectures and fitting criteria  for continuous-time dynamical model identification are presented in \cite{Mavkov20}. 
 Finally, algorithms for efficient training of tailor-made neural state-space models are discussed in \cite{forgione2020model} and \cite{beintema2021nonlinear}. 
-%Finally, [9, 13] propose
-%modeling approaches based on Koopman operator theory. The system state is lifted to a high-dimensional space where the dynamics evolve linearly. This linear dynamics, along with the non-linear state transformation (parametrized as a neural network) are jointly learned with deep-learning tools.
 
 A common (and justified) criticism to the above-mentioned deep system identification approaches is the general lack of uncertainty description and analysis. Indeed, the methods presented in those contributions only produce \emph{nominal} point predictions, with no explicit measure of their reliability.
 While the models are shown to deliver high performance in the considered benchmarks, results may dramatically deteriorate when they are used in an \emph{out-of-distribution} regime, i.e. on a test set whose characteristics (in terms of input amplitude, frequency, power, etc.) differ significantly from the ones of the training data. Even worse, no mechanism is in place to \emph{detect} this failure mode, and models may quietly produce off-target, possibly dangerous predictions.
 
 In current machine learning research, uncertainty quantification is recognized as paramount to increase reliability and acceptance of black-box models like neural networks, and it is thus seen as a fundamental step towards their adoption in mission-critical
-applications~\citep{loquercio2020general}. Different approaches, both deterministic and probabilistic, have been proposed, see \cite{gawlikowski2021survey} for a recent survey. The probabilistic perspective is arguably more general and theoretically appealing. Certain methodologies like model ensembling~\citep{lakshminarayanan2017simple} and dropout~\citep{srivastava2014dropout}, first introduced in a deterministic settings, are now better understood as approximate inference algorithms in a Bayesian probabilistic framework.
+applications~\citep{loquercio2020general}. Different approaches, both deterministic and probabilistic, have been proposed, see \cite{gawlikowski2021survey} for a recent survey. The probabilistic perspective is arguably more general and theoretically appealing. Certain methodologies like ensemble learning~\citep{lakshminarayanan2017simple} and dropout~\citep{srivastava2014dropout}, first introduced in a deterministic settings, are now better understood as approximate inference algorithms in a Bayesian probabilistic framework.
 
 Most of the contributions on uncertainty quantification presented in the deep-learning literature involve static regression problems (typically from the UCI datasets) with feed-forward neural architectures and/or image classification problems (typically from the CIFAR dataset and variants thereof) with convolutional ones, see \cite{maddox2019simple, wilson2020bayesian, izmailov2021bayesian}. To date, little attention has been devoted to sequential learning problems and in particular 
 to non-linear dynamical systems modeling.
-%data/models and in particular 
-%to
-%to dynamical systems described with state-space (recurrent) neural networks.
+
 
 A notable exception is the recent contribution \citep{zhou2022sparse}, where learning of dynamical systems in neural input/output form is formulated  
-in a Bayesian probabilistic framework. Compared to \citep{zhou2022sparse}, our work is focused on neural \emph{state-space} models, which are arguably more amenable for downstream control applications (e.g. for model predictive control) and for analysis with standard system theoretic tools. Furthermore, the main objectives in \citep{zhou2022sparse} are to select the relevant input regressors and to induce sparsity in the network, while our work is focused on uncertainty description and recognition of the out-of-distribution regime. 
+in a Bayesian probabilistic framework. Compared to \citep{zhou2022sparse}, our work is focused on neural \emph{state-space} models, which are arguably more suitable for downstream control applications (e.g. for model predictive control) and for analysis with standard system theoretic tools. Furthermore, the main objectives in \citep{zhou2022sparse} are to select the relevant input regressors and to induce sparsity in the network, while our work is focused on uncertainty description and recognition of the out-of-distribution regime. 
 
 We obtain uncertainty bounds by framing the neural state-space identification problem in a Bayesian probabilistic settings and by deriving 
 (approximate) posterior distributions for the neural network parameters and for its output predictions.
@@ -93,7 +107,7 @@ From a technical perspective, we use the Laplace approximation \citep{bishop2006
 in \citep{forgione2022adaptation} to speed up the required Hessian matrix computations.
 We show that the obtained uncertainty bounds, while not always calibrated, widen significantly when neural state-space models are used in an out-of-distribution regime. 
 
-Based on the obtained uncertainty description, we then introduce a new metric, called \emph{surprise} index, that, for a given trained model and a {new} input sequence, detects whether the model is suitable to predict the corresponding output before collecting any new data. 
+Based on the obtained uncertainty description, we then introduce a new metric, called \emph{surprise} index that, for a given trained model and a {new} input sequence, detects whether the model is suitable to predict the corresponding output before collecting any new data. 
 Thus, the surprise index may be used to assess beforehand whether the predictions generated by a model fed by a specific input
 signal can be trusted.
 
@@ -105,7 +119,7 @@ We demonstrate the effectiveness of our methodology on a variation of the Wiener
 \subsection{Dataset and objective}
 We are given a dataset $\D=(\tvec{u}, \tvec{y})$ with $\nsamp$ input samples $u_k \in \mathbb{R}^{\nin}$ and (possibly noisy) output samples $y_k \in \mathbb{R}$, collected from a dynamical data-generating system $\mathcal{S}$. 
 
-Our goal is to estimate from $\D$ a neural state-space model $M$ of the unknown dynamics of $\mathcal{S}$ which, for a new input sequence $\tvec{u}^*$, generates a prediction of the corresponding output ${\tvec{y}}^*$, plus an \emph{indicator} of the predictions' reliability. 
+Our goal is to estimate from $\D$ a neural state-space model $M$ of the unknown dynamics of $\mathcal{S}$, which for a new input sequence $\tvec{u}^*$, generates a prediction of the corresponding output ${\tvec{y}}^*$, plus an \emph{indicator} of the predictions' reliability. 
 
 Given a suitable probabilistic neural model structure with a prior distribution defined over its parameters, the problem may be tackled through (approximate) statistical inference of the \emph{posterior predictive distribution}  (ppd) $p(\tvec{y}^* | \tvec{u}^*, \D)$, which in turn may be used to generate output predictions with credible intervals. 
 
@@ -169,7 +183,7 @@ Even when the approximate $p(\theta | \D)$ has a simple structure, exact solutio
 We present in this section the approximate inference approaches used to obtain the parameter posterior $p(\theta | \D)$ and 
 the predictive posterior $p(\tvec{y}^*| \tvec{u}^*, \D)$.
 \subsection{Laplace approximation of the parameter posterior}
-The parameter posterior $p(\theta | \D)$ is approximated using the Laplace approximation \citep{bishop2006pattern} centered around the maximum a posteriori (MAP) point estimate  ${\theta^\MAP}$. All the derivations and required computations are specified in this section.
+The parameter posterior $p(\theta | \D)$ is approximated using the Laplace's method \citep{bishop2006pattern} centered around the maximum a posteriori (MAP) point estimate  ${\theta^\MAP}$. All the derivations and required computations are specified in this section.
 \subsubsection{MAP point estimate}
 To obtain the MAP estimate, we consider the \emph{negative} logarithm of the posterior distribution $\nll(\theta) = - \log p(\theta | \D)$:
 \begin{equation}
@@ -217,7 +231,7 @@ while the Hessian of $E_{\rm lik}(\theta)$ is:
 =  \beta \!\sum_{k=0}^{\nsamp-1} \frac{\partial \mean{y}_k}{\partial \theta} {\frac{\partial \mean{y}_k}{\partial \theta}}^{\top} +% \mean{y}_k +
 \beta \!\sum_{k=0}^{\nsamp-1} (\mean{y}_k\! -\! y_k) \frac{\partial^2 \mean{y}_k}{\partial \theta^2}.
 \end{equation}
-According to the  Gauss-Newton (GN) Hessian approximation \citep{wright1999numerical}, the expression above  is dominated by the first term $\beta \!\sum_{k=0}^{\nsamp-1} \frac{\partial \mean{y}_k}{\partial \theta} {\frac{\partial \mean{y}_k}{\partial \theta}}^{\top}$ and the second contribution $\beta \sum_{k=0}^{\nsamp-1} (\mean{y}_k - y_k) \frac{\partial^2 \mean{y}_k}{\partial \theta^2}$ may be neglected.  The GN approximation is accurate, for instance, when $\frac{\partial^2 \mean{y}_k}{\partial \theta^2}$ is small (i.e. model predictions are nearly affine), when $\mean{y}_k - y_k$ is small (which is typically the case for the optimized value of $\theta$ if the variance of $e_k$ 
+According to the  Gauss-Newton (GN) Hessian approximation \citep{wright1999numerical}, the expression above  is dominated by the first term $\beta \!\sum_{k=0}^{\nsamp-1} \frac{\partial \mean{y}_k}{\partial \theta} {\frac{\partial \mean{y}_k}{\partial \theta}}^{\top}$ and the second contribution $\beta \sum_{k=0}^{\nsamp-1} (\mean{y}_k - y_k) \frac{\partial^2 \mean{y}_k}{\partial \theta^2}$ may be neglected.  The GN approximation is accurate, for instance, when $\frac{\partial^2 \mean{y}_k}{\partial \theta^2}$ is small (i.e. model predictions are nearly affine), when $\mean{y}_k - y_k$ is small (which is typically the case for the optimal $\theta$ if the variance of $e_k$ 
 is also small) and, more in general, when $\frac{\partial^2 \mean{y}_k}{\partial \theta^2}$ and $\mean{y}_k - y_k$ are uncorrelated (which is also expected
 for the optimized value of $\theta$, as the residual $\mean{y}_k - y_k$ is then close to the white measurement noise $e_k$).
 
@@ -231,7 +245,7 @@ P_{\theta^{\rm MAP}}^{-1} \approx \tau I + \beta \!\sum_{k=0}^{\nsamp-1} \frac{\
 
 
 \begin{remark}
-The term $\beta \!\sum_{k=0}^{\nsamp-1} \frac{\partial \mean{y}_k}{\partial \theta} {\frac{\partial \mean{y}_k}{\partial \theta}}^\top$ in \eqref{eq:P_post} is also a finite-sample approximation of the \emph{Fisher Information Matrix}, which corresponds in frequentist statistics to the (asymptotic) precision of the maximum likelihood estimator \citep{van2007parameter}. In this sense, the methodologies in this paper may also be used to derive confidence intervals interpretable in a non-Bayesian framework.
+The term $\beta \!\sum_{k=0}^{\nsamp-1} \frac{\partial \mean{y}_k}{\partial \theta} {\frac{\partial \mean{y}_k}{\partial \theta}}^\top$ in \eqref{eq:P_post} is also a finite-sample approximation of the \emph{Fisher Information Matrix}, which corresponds in frequentist statistics to the (asymptotic) precision of the maximum likelihood estimator \citep{van2007parameter}. In this sense, the methodologies of this paper are also applicable to the derivation of confidence intervals in a frequentist setting.
 \end{remark}
 
 \subsubsection{Computational aspects}A straightforward approach to obtain of the gradients $\frac{\partial \mean{y}_k}{\partial \theta},\; k\!=\!0,\dots,\nsamp\!-\!1$ 
@@ -276,7 +290,7 @@ According to the approximation above, we obtain:
 \end{equation}
 Note that the ppd's covariance matrix is the sum of a term $J^* P_{\theta^{\MAP}} {J^*}^\top$ related to the approximate knowledge of the true system parameters (our epistemic uncertainty), plus a term $\nicefrac{1}{\beta} I$ related to measurement noise (the intrinsic aleatoric uncertainty). 
 
-We are interested in particular into the diagonal entries of $\Sigma_{\tvec{y}^*}$, which represent the variance of the output predictions at the different time steps and thus may be used to quantify their uncertainty. Specifically, we construct and visualize 99.7\% credible intervals centered around the nominal prediction and having width $\pm 3$ times the square root of these diagonal entries.
+We are interested in particular into the diagonal entries of $\Sigma_{\tvec{y}^*}$, which correspond to the variance of the output predictions at the different time steps and thus represent their uncertainty. Specifically, we construct and visualize 99.7\% credible intervals centered around the nominal prediction and having width $\pm 3$ times the square root of these diagonal entries.
 
 \subsubsection{Surprise index}
 The diagonal entries of $J^* P_{\theta^{\MAP}} {J^*}^\top$ are also of interest and they are related to the variance in the noise-free output predictions. In particular, a relatively large ratio between the $k$-th diagonal entry of the matrix and $\mean{{y}}^*_{k}$ indicates an unreliable prediction at time instant $k$ whose uncertainty is large compared to the predicted value itself. 
@@ -291,7 +305,6 @@ It is important to note that computation of $s(\tvec{u}^*)$ does not require the
 Therefore, $s(\tvec{u}^*)$ may be used to assess beforehand whether the model is expected to give reliable predictions when fed with the sequence $\tvec{u}^*$.
 
 
-
 \section{Numerical example}
 In this section, we test the methodologies presented in the paper on a non-linear system identification problem. % where the true system is has a Wiener-Hammerstein structure. 
 The developed software is based on the PyTorch deep-learning library and it is available in the GitHub repository \url{https://github.com/forgi86/sysid-neural-unc}.
@@ -299,7 +312,7 @@ Computations are performed on a PC equipped with an AMD Ryzen 5 1600x processor,
 
 %\subsection{Model description}
 %The considered Wiener-Hammerstein systems consists in the series 
-We consider as true system a discrete-time Wiener-Hammerstein with sampling frequency $f_s=51200$~Hz consisting in the series interconnection of a transfer function $G_1(z)$, a static nonlinearity $f(\cdot)$, and a transfer function $G_2(z)$:
+We consider as true system a discrete-time Wiener-Hammerstein with sampling frequency $f_s=51200$~Hz consisting in the series interconnection of a transfer function $G_1(z)$, a static non-linearity $f(\cdot)$, and a transfer function $G_2(z)$:
 \begin{small}
 \begin{align*}
  G_1(z) &= \frac{0.010252 + 0.030757z^{-1} + 0.030757z^{-2} + 0.010252z^{-3}}{ 1 -2.151941z^{-1} + 1.744729z^{-2} -0.510767z^{-3}}\\
@@ -315,13 +328,15 @@ This Wiener-Hammerstein system is closely inspired to the dynamics of the benchm
 {For analogy with \citet{schoukens2009wiener}, inputs and outputs of our numerical example are assumed to be in Volts (V) units hereafter.}
 \begin{figure}
  \centering
- \includegraphics[width=.9\linewidth]{img/wh_bode_mag.pdf}
+ \includegraphics[width=.8\linewidth]{img/wh_bode_mag.pdf}
+  %\includegraphics[width=.8\linewidth]{img/wh_bode_mag.png}
  \caption{WH system: Bode diagrams of $G_1(z)$ and $G_2(z)$.}
  \label{fig:wh_bode}
 \end{figure}
 
 \begin{figure}
  \centering
+% \includegraphics[width=.7\linewidth]{img/wh_static.png}
  \includegraphics[width=.7\linewidth]{img/wh_static.pdf}
  % wh_bode.pdf: 0x0 px, 300dpi, 0.00x0.00 cm, bb=
  \caption{WH system: Static non-linearity $f(\cdot)$.}
@@ -346,9 +361,9 @@ For model testing, we consider four  scenarios where the input signal $\tvec{u}^
  %\item 
  2) a multisine with standard deviation 0.4~V and bandwidth [1\; 2]~kHz;
  %\item 
- 3) a multisine with standard deviation 0.4~V and bandwidth [0\; 10]~kHz;
  %\item 
- 4) a multisine with standard deviation 0.8~V and bandwidth [0\; 2]~kHz.
+ 3) a multisine with standard deviation 0.8~V and bandwidth [0\; 2]~kHz;
+ 4) a multisine with standard deviation 0.4~V and bandwidth [0\; 10]~kHz.
 % \end{enumerate}
  For each test set, we compute the nominal prediction $\mean{\tvec{y}}^*$ by simulating the state-space model \eqref{eq:ss_model} with $\theta=\theta^\MAP$ and  $e=0$, and the approximate ppd according to \eqref{eq:ppd_approx}. The approximate ppd is then used to obtain 99.7\% credible intervals (having width $\pm 3$ times the square root of the diagonal entries of the approximate ppd's covariance matrix $\Sigma_{\tvec{y}^*}$) and the surprise index $s(\tvec{u}^*)$ according to \eqref{eq:surprise}.
 
@@ -370,6 +385,7 @@ The FIT index, surprise index, and coverage of the four test signals are reporte
 
 \begin{figure}%[t]
  \centering
+ %\includegraphics[width=.99\linewidth]{img/MULTISINE_1.png}
  \includegraphics[width=.99\linewidth]{img/MULTISINE_1.pdf}
  % wh_bode.pdf: 0x0 px, 300dpi, 0.00x0.00 cm, bb=
  \caption{WH system: results on multisine signal 1.}
@@ -378,6 +394,7 @@ The FIT index, surprise index, and coverage of the four test signals are reporte
 
 \begin{figure}%[t]
  \centering
+%  \includegraphics[width=.99\linewidth]{img/MULTISINE_2.png}
  \includegraphics[width=.99\linewidth]{img/MULTISINE_2.pdf}
  % wh_bode.pdf: 0x0 px, 300dpi, 0.00x0.00 cm, bb=
  \caption{WH system: results on multisine signal 2.}
@@ -386,6 +403,7 @@ The FIT index, surprise index, and coverage of the four test signals are reporte
 
 \begin{figure}%[t]
  \centering
+ % \includegraphics[width=.99\linewidth]{img/MULTISINE_3.png}
  \includegraphics[width=.99\linewidth]{img/MULTISINE_3.pdf}
  % wh_bode.pdf: 0x0 px, 300dpi, 0.00x0.00 cm, bb=
  \caption{WH system: results on multisine signal 3.}
@@ -394,6 +412,7 @@ The FIT index, surprise index, and coverage of the four test signals are reporte
 
 \begin{figure}%[t]
  \centering
+ % \includegraphics[width=.99\linewidth]{img/MULTISINE_4.png}
  \includegraphics[width=.99\linewidth]{img/MULTISINE_4.pdf}
  % wh_bode.pdf: 0x0 px, 300dpi, 0.00x0.00 cm, bb=
  \caption{WH system: results on multisine signal 4.}
@@ -416,7 +435,7 @@ too often out of the red shaded area, thus the latter is not a well-calibrated 9
     \centering
     \begin{tabular}{|l||l|l|l|}
     \hline
-    Signal &  FIT (\%) & coverage (\%) & suprise (\%)\\
+    Signal &  FIT (\%) & coverage (\%) & surprise (\%)\\
     \hline
     multisine 1 &98.1 & 99.2 & 0.33\\
     multisine 2 &97.7 & 98.6 & 0.43\\
@@ -430,16 +449,19 @@ too often out of the red shaded area, thus the latter is not a well-calibrated 9
 \section{Conclusion}
 We have presented a viable approach for uncertainty quantification with neural state-space models. Based on the obtained uncertainty description, we have defined a surprise index that indicates whether the model predictions generated from a given input are expected to be reliable, i.e. close to the response of the true system.
 
-This preliminary work may be extended in different directions. First, other inference approximation techniques may be adopted to obtain a richer and more accurate characterisation of the uncertainty. In this sense, efficient sampling techniques such as Hamiltonian Monte Carlo may be considered to overcome the limiting assumptions (e.g. uni-modality) of the currently used Laplace approximation. A challenge in this sense is to devise scalable algorithms applicable to large neural-network models.
+This preliminary work may be extended in different directions. First, other inference approximation techniques may be adopted to obtain a richer and more accurate characterization of the uncertainty. In this sense, efficient sampling techniques such as Hamiltonian Monte Carlo may be considered to overcome the limiting assumptions (e.g. uni-modality) of the currently used Laplace approximation. A challenge in this sense is to devise scalable algorithms applicable to large neural-network models.
 
-Furthermore, tools like the surprise index may be used in future investigation to {choose} informative input signals to be used for model training/refinement. 
+Furthermore, tools like the surprise index may be used 
+%in future investigation
+to {choose} informative input signals to be used for model training/refinement. 
 This could pave the way for experiment design and active learning in the context of system identification with neural state-space models.
 
-Finally, to foster further research in uncertainty quantification and out-of-distribution recognition, specific benchmarks and performance evaluation metrics should be devised and shared with the system identification community.
+Finally, to foster further research in uncertainty quantification and out-of-distribution recognition, specific benchmarks and performance metrics should be devised and shared with the system identification community.
 
-\begin{ack}
+
+\section*{Acknowledgement}
 This work was partially supported by the European H2020-CS2 project ADMITTED, Grant agreement no. GA832003.
-\end{ack}
+%\end{ack}
 
 \bibliography{references}                           
 

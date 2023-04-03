@@ -11,6 +11,7 @@ if __name__ == '__main__':
             'family': 'serif'}
 
     mpl.rc('font', **font)
+    #mpl.rc('text', usetex=True) probably better for latex compatibility?
 
     fs = 51200
     ts = 1 / fs
